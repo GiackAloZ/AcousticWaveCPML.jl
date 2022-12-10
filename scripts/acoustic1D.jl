@@ -79,27 +79,28 @@ end
 end
 
 @views function acoustic1D(
+    dx::Float64,
+    nt::Integer,
     vel::Vector{Float64};
-    nt::Integer = 1500,
     halo::Integer = 20,
+    rcoef::Float64 = 0.0001,
     do_vis::Bool = true,
     do_bench::Bool = false,
-    nvis::Integer = 10,
-    gif_name::String = "acoustic1D"
+    nvis::Integer = 5,
+    gif_name::String = "acoustic1D",
+    ylims::Vector{Float64} = [-4.0, 4.0]
 )
     # Physics
-    f0 = 12.0                           # dominating frequency [Hz]
+    f0 = 8.0                            # dominating frequency [Hz]
     t0 = 1.2 / f0                       # activation time [s]
     # Derived physics
     vel_max = maximum(vel)              # maximum velocity [m/s]
     # Numerics
-    nx            = length(vel)
+    nx            = length(vel)         # number of grid points
     npower        = 2.0
     K_max         = 1.0
-    rcoef         = 0.0001
     # Derived numerics
-    dx = 10.0                            # size of grid cell [m]
-    dt = 0.0012                          # timestep size (CFL + Courant condition) [s]
+    dt = dx / vel_max                    # timestep size (CFL + Courant condition) [s]
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # CPML numerics
     alpha_max        = 2.0*π*(f0/2.0)
@@ -109,8 +110,9 @@ end
     a_x_hl, a_x_hr, b_K_x_hl, b_K_x_hr = calc_Kab_CPML(halo,dt,npower,d0_x,alpha_max,K_max,"halfgrd")
     # precomputations
     fact = vel.^2 .* (dt^2/dx^2)
-    # visualization constants
-    maxp, minp = 25, -25
+
+    # assertions for stability
+    @assert dx <= vel_max/(10.0 * f0)   # at least 10pts per wavelength
     
     # Array initialization
 
@@ -122,11 +124,15 @@ end
     ψ_l, ψ_r = zeros(halo+1), zeros(halo+1)
     ξ_l, ξ_r = zeros(halo), zeros(halo)
     # sources
-    possrcs = zeros(Int,1,1)
-    possrcs[1,1] = div(nx, 2)
+    possrcs = zeros(Int,3,1)
+    possrcs[1,1] = div( nx, 4)
+    possrcs[2,1] = div(2nx, 4)
+    possrcs[3,1] = div(3nx, 4)
     # source time functions
-    dt2srctf = zeros(nt,1)
-    dt2srctf[:,1] .= rickersource1D(times, t0, f0)
+    dt2srctf = zeros(nt,3)
+    dt2srctf[:,1] .= fact[possrcs[1,1]] .* rickersource1D(times, t0, f0)
+    dt2srctf[:,2] .= fact[possrcs[2,1]] .* rickersource1D(times, t0, f0)
+    dt2srctf[:,3] .= fact[possrcs[3,1]] .* rickersource1D(times, t0, f0)
 
     # benchmarking instead of actual computation
     if do_bench
@@ -162,9 +168,18 @@ end
 
         # visualization
         if do_vis && (it % nvis == 0)
-            maxp = max(maxp, maximum(pnew))
-            minp = min(minp, minimum(pnew))
-            plot(1:nx, pnew; ylim=(minp, maxp), title="it $(it)", legend=:none)
+            # update ylims
+            ylims[1] = min(ylims[1], minimum(pnew))
+            ylims[2] = max(ylims[2], maximum(pnew))
+            # sources positions
+            scatter(possrcs[:,1], fill(0.0, size(possrcs, 1)); markershape=:star, color=:red, label="sources")
+            # CPML boundaries
+            plot!(fill(halo+1, 2), ylims; color=:grey, linestyle=:dot, label="CPML boundary")
+            plot!(fill(nx-halo, 2), ylims; color=:grey, linestyle=:dot, label=:none)
+            # plot pressure
+            plot!(1:nx, pnew;
+                 ylim=ylims, xlabel="lx", ylabel="pressure", label="pressure", color=:blue,
+                 title="1D Acoustic CPML\n(halo=$(halo), rcoef=$(rcoef))")
             frame(anim)
         end
     end
@@ -176,5 +191,5 @@ end
     return nothing
 end
 
-acoustic1D(2000 .* ones(Float64, 211), nt=1000, do_vis=true)
+acoustic1D(10.0, 300, 2000 .* ones(Float64, 200); nvis=1, halo=20, rcoef=0.0001, do_vis=true)
 # acoustic1D(2000 .* ones(Float64, 1_000_000), nt=1000, do_bench=true)
