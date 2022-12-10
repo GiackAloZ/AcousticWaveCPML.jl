@@ -79,16 +79,16 @@ end
 end
 
 @views function acoustic1D(
-    lx::Float64,
+    lx::Real,
     nt::Integer,
-    vel::Vector{Float64};
+    vel::Vector{<:Real};
     halo::Integer = 20,
-    rcoef::Float64 = 0.0001,
+    rcoef::Real = 0.0001,
     do_vis::Bool = true,
     do_bench::Bool = false,
     nvis::Integer = 2,
     gif_name::String = "acoustic1D",
-    plims::Vector{Float64} = [-1e-4, 1e-4]
+    plims::Vector{<:Real} = [-1e-4, 1e-4]
 )
     # Physics
     f0 = 8.0                            # dominating frequency [Hz]
@@ -194,5 +194,9 @@ end
     return nothing
 end
 
-acoustic1D(5000.0, 500, 2000 .* ones(Float64, 501); halo=20, rcoef=0.0001, do_vis=true)
-# acoustic1D(5000.0, 500, 2000 .* ones(Float64, 501); halo=20, rcoef=0.0001, do_bench=true)
+# simple constant velocity model
+vel = 2000 .* ones(Float64, 201)
+
+acoustic1D(2000.0, 500, vel; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic1D_halo5")
+acoustic1D(2000.0, 500, vel; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic1D_halo10")
+acoustic1D(2000.0, 500, vel; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic1D_halo20")
