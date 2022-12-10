@@ -123,7 +123,8 @@ end
     lx::Real,
     ly::Real,
     nt::Integer,
-    vel::Matrix{<:Real};
+    vel::Matrix{<:Real},
+    possrcs;
     halo::Integer = 20,
     rcoef::Real = 0.0001,
     do_vis::Bool = true,
@@ -187,22 +188,12 @@ end
     ξ_x_l, ξ_x_r = zeros(halo,ny), zeros(halo,ny)
     ψ_y_l, ψ_y_r = zeros(nx,halo+1), zeros(nx,halo+1)
     ξ_y_l, ξ_y_r = zeros(nx,halo), zeros(nx,halo)
-    # sources
-    possrcs = zeros(Int,6,2)
-    possrcs[1,:] = [div(3nx, 11, RoundUp), 3]
-    possrcs[2,:] = [div(4nx, 11, RoundUp), 3]
-    possrcs[3,:] = [div(5nx, 11, RoundUp), 3]
-    possrcs[4,:] = [div(6nx, 11, RoundUp), 3]
-    possrcs[5,:] = [div(7nx, 11, RoundUp), 3]
-    possrcs[6,:] = [div(8nx, 11, RoundUp), 3]
     # source time functions
-    dt2srctf = zeros(nt,6)
-    dt2srctf[:,1] .= (dt^2) .* 1000 .* rickersource1D(times, t0, f0)
-    dt2srctf[:,2] .= (dt^2) .* 1000 .* rickersource1D(times, t0, f0)
-    dt2srctf[:,3] .= (dt^2) .* 1000 .* rickersource1D(times, t0, f0)
-    dt2srctf[:,4] .= (dt^2) .* 1000 .* rickersource1D(times, t0, f0)
-    dt2srctf[:,5] .= (dt^2) .* 1000 .* rickersource1D(times, t0, f0)
-    dt2srctf[:,6] .= (dt^2) .* 1000 .* rickersource1D(times, t0, f0)
+    nsrcs = size(possrcs,1)
+    dt2srctf = zeros(nt,nsrcs)
+    for s = 1:nsrcs
+        dt2srctf[:,s] .= (dt^2) .* 1000 .* rickersource1D(times, t0, f0)
+    end
 
     # benchmarking instead of actual computation
     if do_bench
@@ -244,9 +235,9 @@ end
             velview = (((copy(vel) .- minimum(vel)) ./ (maximum(vel) - minimum(vel)))) .* (plims[2] - plims[1]) .+ plims[1]
             heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal)
             # pressure heatmap
-            @show maximum(pcur)
             pview = copy(pcur) .* 1e3
             maxabsp = @sprintf "%e" maximum(abs.(pview))
+            @show maxabsp
             pview[(pview .> plims[1] * threshold) .& (pview .< plims[2] * threshold)] .= NaN
             heatmap!(0:dx:lx, 0:dy:ly, pview';
                   xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
@@ -256,9 +247,16 @@ end
             # sources positions
             scatter!((possrcs[:,1].-1) .* dx, (possrcs[:,2].-1) .* dy; markershape=:star, markersize=5, color=:red, label="sources")
             # CPML boundaries
-            plot!(fill(halo * dx, 2), [0, ly - (halo * dy)]; lw=2, color=:grey, linestyle=:dot, label="CPML boundary")
-            plot!(fill(lx - (halo * dx), 2), [0, ly - (halo * dy)]; lw=2, color=:grey, linestyle=:dot, label=:none)
-            plot!([halo * dx, lx - (halo * dx)], fill(ly - (halo * dy), 2); lw=2, color=:grey, linestyle=:dot, label=:none)
+            if freetop
+                plot!(fill(halo * dx, 2), [0, ly - (halo * dy)]; lw=2, color=:grey, linestyle=:dot, label="CPML boundary")
+                plot!(fill(lx - (halo * dx), 2), [0, ly - (halo * dy)]; lw=2, color=:grey, linestyle=:dot, label=:none)
+                plot!([halo * dx, lx - (halo * dx)], fill(ly - (halo * dy), 2); lw=2, color=:grey, linestyle=:dot, label=:none)
+            else
+                plot!(fill(halo * dx, 2), [halo * dy, ly - (halo * dy)]; lw=2, color=:grey, linestyle=:dot, label="CPML boundary")
+                plot!(fill(lx - (halo * dx), 2), [halo * dy, ly - (halo * dy)]; lw=2, color=:grey, linestyle=:dot, label=:none)
+                plot!([halo * dx, lx - (halo * dx)], fill(ly - (halo * dy), 2); lw=2, color=:grey, linestyle=:dot, label=:none)
+                plot!([halo * dx, lx - (halo * dx)], fill(halo * dy, 2); lw=2, color=:grey, linestyle=:dot, label=:none)
+            end
             # flip y axis
             yflip!(true)
             # save frame
@@ -273,7 +271,7 @@ end
     return nothing
 end
 
-# simple gradient velocity model
+# gradient velocity model
 nx, ny = 211, 121
 vel = zeros(Float64, nx, ny);
 for i=1:nx
@@ -281,8 +279,32 @@ for i=1:nx
         vel[i,j] = 2000.0 + 12.0*(j-1)
     end
 end
+# constant after some depth
+bigv = vel[1,ny-40]
+vel[:,ny-40:end] .= bigv
 
-# acoustic2D(2100.0, 1200.0, 3000, vel; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_halo5")
-# acoustic2D(2100.0, 1200.0, 3000, vel; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_halo10")
-# acoustic2D(2100.0, 1200.0, 3000, vel; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_halo20")
-acoustic2D(2100.0, 1200.0, 3000, vel; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_halo40")
+# 6 equidistant sources on top
+possrcs = zeros(Int,6,2)
+possrcs[1,:] = [div(3nx, 11, RoundUp), 3]
+possrcs[2,:] = [div(4nx, 11, RoundUp), 3]
+possrcs[3,:] = [div(5nx, 11, RoundUp), 3]
+possrcs[4,:] = [div(6nx, 11, RoundUp), 3]
+possrcs[5,:] = [div(7nx, 11, RoundUp), 3]
+possrcs[6,:] = [div(8nx, 11, RoundUp), 3]
+
+acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_halo5")
+acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_halo10")
+acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_halo20")
+acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_halo40")
+
+# simple constant velocity model
+nx, ny = 211, 211
+vel = 2000.0 .* ones(Float64, nx, ny);
+# one source in the center
+possrcs = zeros(Int,1,2)
+possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp)]
+
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_center_halo5", freetop=false, threshold=0.0)
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.0)
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.0)
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_center_halo40", freetop=false, threshold=0.0)
