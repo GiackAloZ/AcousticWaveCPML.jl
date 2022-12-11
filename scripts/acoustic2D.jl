@@ -206,15 +206,24 @@ end
             $a_y_l,   $a_y_r,   $b_K_y_l,   $b_K_y_r,
             $possrcs, $dt2srctf, 1
         )
+        # allocated memory [GB]
+        alloc_mem = (
+                     3*(nx*ny) +
+                     2*((halo+1)*ny) + 2*(halo*ny) +
+                     2*((halo+1)*nx) + 2*(halo*nx) +
+                     4*2*(halo+1) + 4*2*halo
+                    ) * sizeof(Float64) / 1e9
         # effective memory access [GB]
         A_eff = (
-            2*(halo+1)*ny*2*(4 + 1) +         # update_ψ_x! + ξ_x update in update_p!
-            2*(halo+1)*nx*2*(4 + 1) +         # update_ψ_y! + ξ_y update in update_p!
-            5*nx*ny                           # update_p! (inner points)
+            (halo+1)*ny*2*(2 + 1) +         # update_ψ_x!
+            (halo+1)*nx*2*(2 + 1) +         # update_ψ_y!
+            (halo+1)*ny*2*(1 + 1) +         # update ξ_x in update_p!
+            (halo+1)*nx*2*(1 + 1) +         # update ξ_y in update_p!
+            4*nx*ny                         # update_p! (inner points)
         ) * sizeof(Float64) / 1e9
         # effective memory throughput [GB/s]
         T_eff = A_eff / t_it
-        @printf("nx = %d, ny = %d, time = %1.3e sec, Teff = %1.3f GB/s\n", nx, ny, t_it, T_eff)
+        @printf("nx = %d, ny = %d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, t_it, T_eff, alloc_mem)
         return nothing
     end
 
