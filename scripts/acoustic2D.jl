@@ -23,9 +23,9 @@ DOCS_FLD = joinpath(dirname(@__DIR__), "docs")
         for i = 1:halo+1
             ii = i + nx - halo - 2  # shift for right boundary pressure indices
             # left boundary
-            ψ_x_l[i,j] = b_K_x_hl[i] * ψ_x_l[i] + a_x_hl[i]*(pcur[ i+1,j] - pcur[ i,j])*_dx
+            ψ_x_l[i,j] = b_K_x_hl[i] * ψ_x_l[i,j] + a_x_hl[i]*(pcur[ i+1,j] - pcur[ i,j])*_dx
             # right boundary
-            ψ_x_r[i,j] = b_K_x_hr[i] * ψ_x_r[i] + a_x_hr[i]*(pcur[ii+1,j] - pcur[ii,j])*_dx
+            ψ_x_r[i,j] = b_K_x_hr[i] * ψ_x_r[i,j] + a_x_hr[i]*(pcur[ii+1,j] - pcur[ii,j])*_dx
         end
     end
     # y boundaries
@@ -33,9 +33,9 @@ DOCS_FLD = joinpath(dirname(@__DIR__), "docs")
         for i = 1:nx
             jj = j + ny - halo - 2  # shift for bottom boundary pressure indices
             # top boundary
-            ψ_y_l[i,j] = b_K_y_hl[j] * ψ_y_l[j] + a_y_hl[j]*(pcur[i, j+1] - pcur[i, j])*_dy
+            ψ_y_l[i,j] = b_K_y_hl[j] * ψ_y_l[i,j] + a_y_hl[j]*(pcur[i, j+1] - pcur[i, j])*_dy
             # bottom boundary
-            ψ_y_r[i,j] = b_K_y_hr[j] * ψ_y_r[j] + a_y_hr[j]*(pcur[i,jj+1] - pcur[i,jj])*_dy
+            ψ_y_r[i,j] = b_K_y_hr[j] * ψ_y_r[i,j] + a_y_hr[j]*(pcur[i,jj+1] - pcur[i,jj])*_dy
         end
     end
 end
@@ -132,7 +132,7 @@ end
     nvis::Integer = 5,
     gif_name::String = "acoustic2D",
     plims::Vector{<:Real} = [-3, 3],
-    threshold::Real = 0.05,
+    threshold::Real = 0.01,
     freetop::Bool = true
 )
     # Physics
@@ -198,10 +198,12 @@ end
     # benchmarking instead of actual computation
     if do_bench
         t_it = @belapsed $kernel!(
-            $pold, $pcur, $pnew, $fact, $_dx, $_dx2,
-            $halo, $ψ_l, $ψ_r, $ξ_l, $ξ_r,
-            $a_x_hl, $a_x_hr, $b_K_x_hl, $b_K_x_hr,
-            $a_x_l, $a_x_r, $b_K_x_l, $b_K_x_r,
+            $pold,    $pcur,    $pnew,      $fact, $_dx, $_dx2, $_dy, $_dy2,
+            $halo,    $ψ_x_l,   $ψ_x_r,     $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r,
+            $a_x_hl,  $a_x_hr,  $b_K_x_hl,  $b_K_x_hr,
+            $a_x_l,   $a_x_r,   $b_K_x_l,   $b_K_x_r,
+            $a_y_hl,  $a_y_hr,  $b_K_y_hl,  $b_K_y_hr,
+            $a_y_l,   $a_y_r,   $b_K_y_l,   $b_K_y_r,
             $possrcs, $dt2srctf, 1
         )
         # effective memory access [GB]
@@ -242,7 +244,7 @@ end
             heatmap!(0:dx:lx, 0:dy:ly, pview';
                   xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx", ylabel="ly", clabel="pressure", c=:diverging_bwr_20_95_c54_n256,
-                  title="2D Acoustic CPML\n(halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100))%)\n max abs pressure = $(maxabsp)"
+                  title="2D Acoustic CPML\n(halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\n max abs pressure = $(maxabsp)"
             )
             # sources positions
             scatter!((possrcs[:,1].-1) .* dx, (possrcs[:,2].-1) .* dy; markershape=:star, markersize=5, color=:red, label="sources")
@@ -304,7 +306,7 @@ vel = 2000.0 .* ones(Float64, nx, ny);
 possrcs = zeros(Int,1,2)
 possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp)]
 
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_center_halo5", freetop=false, threshold=0.0)
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.0)
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.0)
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_center_halo40", freetop=false, threshold=0.0)
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_center_halo5", freetop=false, threshold=0.001)
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.001)
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.001)
+acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_center_halo40", freetop=false, threshold=0.001)
