@@ -19,6 +19,8 @@ const USE_GPU = false
     @init_parallel_stencil(CUDA, Float64, 2)
     # Disable interactive visualization on GPU environment
     ENV["GKSwstype"]="nul"
+    # Select first device
+    device!(collect(devices())[0])
 else
     @init_parallel_stencil(Threads, Float64, 2)
 end
