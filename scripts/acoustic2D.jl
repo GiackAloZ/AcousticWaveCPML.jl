@@ -197,7 +197,8 @@ end
 
     # benchmarking instead of actual computation
     if do_bench
-        t_it = @belapsed $kernel!(
+        # run benchmark trial
+        trial = @benchmark $kernel!(
             $pold,    $pcur,    $pnew,      $fact, $_dx, $_dx2, $_dy, $_dy2,
             $halo,    $ψ_x_l,   $ψ_x_r,     $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r,
             $a_x_hl,  $a_x_hr,  $b_K_x_hl,  $b_K_x_hr,
@@ -206,6 +207,14 @@ end
             $a_y_l,   $a_y_r,   $b_K_y_l,   $b_K_y_r,
             $possrcs, $dt2srctf, 1
         )
+        # check benchmark
+        confidence = 0.95
+        med_range = 0.05
+        pass, ci, tol_range = check_trial(trial, confidence, med_range)
+        t_it = median(trial).time / 1e9
+        if !pass
+            @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
+        end
         # allocated memory [GB]
         alloc_mem = (
                      3*(nx*ny) +
@@ -282,46 +291,46 @@ end
     return nothing
 end
 
-# gradient velocity model
-nx, ny = 211, 121
-vel = zeros(Float64, nx, ny);
-for i=1:nx
-    for j=1:ny
-        vel[i,j] = 2000.0 + 12.0*(j-1)
-    end
-end
-# constant after some depth
-bigv = vel[1,ny-40]
-vel[:,ny-40:end] .= bigv
+# # gradient velocity model
+# nx, ny = 211, 121
+# vel = zeros(Float64, nx, ny);
+# for i=1:nx
+#     for j=1:ny
+#         vel[i,j] = 2000.0 + 12.0*(j-1)
+#     end
+# end
+# # constant after some depth
+# bigv = vel[1,ny-40]
+# vel[:,ny-40:end] .= bigv
 
-# 6 equidistant sources on top
-possrcs = zeros(Int,6,2)
-possrcs[1,:] = [div(3nx, 11, RoundUp), 3]
-possrcs[2,:] = [div(4nx, 11, RoundUp), 3]
-possrcs[3,:] = [div(5nx, 11, RoundUp), 3]
-possrcs[4,:] = [div(6nx, 11, RoundUp), 3]
-possrcs[5,:] = [div(7nx, 11, RoundUp), 3]
-possrcs[6,:] = [div(8nx, 11, RoundUp), 3]
+# # 6 equidistant sources on top
+# possrcs = zeros(Int,6,2)
+# possrcs[1,:] = [div(3nx, 11, RoundUp), 3]
+# possrcs[2,:] = [div(4nx, 11, RoundUp), 3]
+# possrcs[3,:] = [div(5nx, 11, RoundUp), 3]
+# possrcs[4,:] = [div(6nx, 11, RoundUp), 3]
+# possrcs[5,:] = [div(7nx, 11, RoundUp), 3]
+# possrcs[6,:] = [div(8nx, 11, RoundUp), 3]
 
-acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_halo5")
-acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_halo10")
-acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_halo20")
-acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_halo40")
+# acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_halo5")
+# acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_halo10")
+# acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_halo20")
+# acoustic2D(2100.0, 1200.0, 1500, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_halo40")
 
-# simple constant velocity model
-nx, ny = 211, 211
-vel = 2000.0 .* ones(Float64, nx, ny);
-# one source in the center
-possrcs = zeros(Int,1,2)
-possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp)]
+# # simple constant velocity model
+# nx, ny = 211, 211
+# vel = 2000.0 .* ones(Float64, nx, ny);
+# # one source in the center
+# possrcs = zeros(Int,1,2)
+# possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp)]
 
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_center_halo5", freetop=false, threshold=0.001)
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.001)
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.001)
-acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_center_halo40", freetop=false, threshold=0.001)
+# acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_center_halo5", freetop=false, threshold=0.001)
+# acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.001)
+# acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.001)
+# acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_center_halo40", freetop=false, threshold=0.001)
 
 # benchmark
-nx = ny = 2 .^ (5:13) .+ 1
+nx = ny = 2 .^ (5:11) .+ 1
 lx = ly = (nx .- 1) .* 10.0
 for i = eachindex(nx)
     vel = 2000 .* ones(nx[i], ny[i])

@@ -1,3 +1,5 @@
+using BenchmarkTools, HypothesisTests
+
 """
  Compute d, K and a parameters for CPML
 """
@@ -57,4 +59,13 @@ function rickersource1D(t::Vector{<:Real}, t0::Real, f0::Real)
     b = (pi*f0*(t.-t0)).^2
     w = (1.0.-2.0.*b).*exp.(.-b)
     return w
+end
+
+function check_trial(trial::BenchmarkTools.Trial, confidence=0.95, range=0.05)
+    data = trial.times
+    m = median(trial).time
+    test = SignTest(data, m)
+    ci_left, ci_right = confint(test, level=confidence)
+    tol_left, tol_right = (m - m*range, m + m*range)
+    return ci_left >= tol_left && ci_right <= tol_right, (ci_left / 1e9, ci_right / 1e9), (tol_left / 1e9, tol_right / 1e9)
 end

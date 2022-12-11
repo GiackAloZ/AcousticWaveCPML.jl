@@ -132,6 +132,8 @@ end
                                         ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r,
                                         a_x_l, a_x_r, b_K_x_l, b_K_x_r,
                                         a_y_l, a_y_r, b_K_y_l, b_K_y_r)
+    
+    # inject sources
     @parallel (1:size(possrcs,1)) inject_sources!(pnew, dt2srctf, possrcs, it)
 
     return pcur, pnew, pold
@@ -221,15 +223,24 @@ end
 
     # benchmarking instead of actual computation
     if do_bench
-        t_it = @belapsed $kernel!(
+        # run benchmark trial
+        trial = @benchmark $kernel!(
             $pold,    $pcur,    $pnew,      $fact, $_dx, $_dx2, $_dy, $_dy2,
             $halo,    $ψ_x_l,   $ψ_x_r,     $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r,
             $a_x_hl,  $a_x_hr,  $b_K_x_hl,  $b_K_x_hr,
             $a_x_l,   $a_x_r,   $b_K_x_l,   $b_K_x_r,
             $a_y_hl,  $a_y_hr,  $b_K_y_hl,  $b_K_y_hr,
             $a_y_l,   $a_y_r,   $b_K_y_l,   $b_K_y_r,
-            $possrcs_a, $dt2srctf, 1
+            $possrcs, $dt2srctf, 1
         )
+        # check benchmark
+        confidence = 0.95
+        med_range = 0.05
+        pass, ci, tol_range = check_trial(trial, confidence, med_range)
+        t_it = median(trial).time / 1e9
+        if !pass
+            @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
+        end
         # allocated memory [GB]
         alloc_mem = (
                      3*(nx*ny) +
