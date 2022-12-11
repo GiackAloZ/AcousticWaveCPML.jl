@@ -20,7 +20,7 @@ const USE_GPU = false
     # Disable interactive visualization on GPU environment
     ENV["GKSwstype"]="nul"
     # Select first device
-    device!(collect(devices())[0])
+    device!(collect(devices())[1])
 else
     @init_parallel_stencil(Threads, Float64, 2)
 end
@@ -233,7 +233,7 @@ end
             $a_y_l,   $a_y_r,   $b_K_y_l,   $b_K_y_r,
             $possrcs, $dt2srctf, 1
         )
-        # check benchmark
+        # # check benchmark
         confidence = 0.95
         med_range = 0.05
         pass, ci, tol_range = check_trial(trial, confidence, med_range)
@@ -318,7 +318,7 @@ end
 end
 
 # benchmark
-nx = ny = 2 .^ (5:13) .+ 1
+nx = ny = 2 .^ (5:11) .+ 1
 lx = ly = (nx .- 1) .* 10.0
 for i = eachindex(nx)
     vel = 2000 .* ones(nx[i], ny[i])
