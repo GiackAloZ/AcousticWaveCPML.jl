@@ -208,13 +208,13 @@ end
         )
         # effective memory access [GB]
         A_eff = (
-            2*( 4*(halo+1) + (halo+1) ) +                   # update_ψ!
-            2*( 4*(halo+1) + (halo+1) ) +                   # update_p! (CPML layers)
-            (4*nx + nx)                                     # update_p! (all points)
+            2*(halo+1)*ny*2*(4 + 1) +         # update_ψ_x! + ξ_x update in update_p!
+            2*(halo+1)*nx*2*(4 + 1) +         # update_ψ_y! + ξ_y update in update_p!
+            5*nx*ny                           # update_p! (inner points)
         ) * sizeof(Float64) / 1e9
         # effective memory throughput [GB/s]
         T_eff = A_eff / t_it
-        @printf("Time: %1.3e sec, Teff = %1.3f GB/s \n", t_it, T_eff)
+        @printf("nx = %d, ny = %d, time = %1.3e sec, Teff = %1.3f GB/s\n", nx, ny, t_it, T_eff)
         return nothing
     end
 
@@ -310,3 +310,13 @@ acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, 
 acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.001)
 acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.001)
 acoustic2D(2100.0, 2100.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic2D_center_halo40", freetop=false, threshold=0.001)
+
+# benchmark
+nx = ny = 2 .^ (5:13) .+ 1
+lx = ly = (nx .- 1) .* 10.0
+for i = eachindex(nx)
+    vel = 2000 .* ones(nx[i], ny[i])
+    possrcs = zeros(Int,1,2)
+    possrcs[1,:] = [div(nx[i], 2, RoundUp), div(ny[i], 2, RoundUp)]
+    acoustic2D(lx[i], ly[i], 1, vel, possrcs; do_bench=true, freetop=false)
+end
