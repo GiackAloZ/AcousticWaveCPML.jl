@@ -225,13 +225,13 @@ end
     if do_bench
         # run benchmark trial
         trial = @benchmark $kernel!(
-            $pold,    $pcur,    $pnew,      $fact, $_dx, $_dx2, $_dy, $_dy2,
-            $halo,    $ψ_x_l,   $ψ_x_r,     $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r,
-            $a_x_hl,  $a_x_hr,  $b_K_x_hl,  $b_K_x_hr,
-            $a_x_l,   $a_x_r,   $b_K_x_l,   $b_K_x_r,
-            $a_y_hl,  $a_y_hr,  $b_K_y_hl,  $b_K_y_hr,
-            $a_y_l,   $a_y_r,   $b_K_y_l,   $b_K_y_r,
-            $possrcs, $dt2srctf, 1
+            $pold, $pcur, $pnew, $fact, $_dx, $_dx2, $_dy, $_dy2,
+            $halo, $ψ_x_l, $ψ_x_r, $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r,
+            $a_x_hl, $a_x_hr, $b_K_x_hl, $b_K_x_hr,
+            $a_x_l, $a_x_r, $b_K_x_l, $b_K_x_r,
+            $a_y_hl, $a_y_hr, $b_K_y_hl, $b_K_y_hr,
+            $a_y_l, $a_y_r, $b_K_y_l, $b_K_y_r,
+            $possrcs_a, $dt2srctf, 1
         )
         # # check benchmark
         confidence = 0.95
