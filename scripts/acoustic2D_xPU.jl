@@ -318,7 +318,7 @@ end
 end
 
 # benchmark
-nx = ny = 2 .^ (5:11) .+ 1
+nx = ny = 2 .^ (5:12) .+ 1
 lx = ly = (nx .- 1) .* 10.0
 for i = eachindex(nx)
     vel = 2000 .* ones(nx[i], ny[i])
