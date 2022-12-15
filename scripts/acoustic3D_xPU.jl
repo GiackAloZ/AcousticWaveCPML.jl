@@ -433,10 +433,10 @@ end
 # t_tic = Base.time()
 # nx = ny = nz = 128
 # nt = 1000
-# lx = ly = lz = (nx .- 1) .* 10.0
+# lx = ly = lz = (nx - 1) * 10.0
 # vel = 2000 .* ones(nx, ny, nz)
 # possrcs = zeros(Int,1,3)
 # possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
 # acoustic3D_xPU(lx, ly, lz, nt, vel, possrcs; do_vis=false, do_save=false, freetop=false)
 # t_toc = Base.time() - t_tic
-# @printf("size = %dx%d, nt = %d, time = %1.3e sec\n", nx, ny, nt, t_toc)
+# @printf("size = %dx%dx%d, nt = %d, time = %1.3e sec\n", nx, ny, nz, nt, t_toc)
