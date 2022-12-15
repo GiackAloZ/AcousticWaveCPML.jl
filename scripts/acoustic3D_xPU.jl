@@ -317,7 +317,7 @@ end
         ) * sizeof(Float64) / 1e9
         # effective memory throughput [GB/s]
         T_eff = A_eff / t_it
-        @printf("nx = %d, ny = %d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, t_it, T_eff, alloc_mem)
+        @printf("size = %dx%dx%d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, nz, t_it, T_eff, alloc_mem)
         return nothing
     end
 
@@ -390,25 +390,25 @@ end
     return nothing
 end
 
-# simple constant velocity model
-nx, ny, nz = 101, 101, 101
-vel = 2000.0 .* ones(Float64, nx, ny, nz);
-# one source in the center
-possrcs = zeros(Int,1,3)
-possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
+# # simple constant velocity model
+# nx, ny, nz = 101, 101, 101
+# vel = 2000.0 .* ones(Float64, nx, ny, nz);
+# # one source in the center
+# possrcs = zeros(Int,1,3)
+# possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
 
-acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic3D_center_halo5", save_name="acoustic3D_center_halo5", freetop=false, threshold=0.001)
-acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic3D_center_halo10", save_name="acoustic3D_center_halo10", freetop=false, threshold=0.001)
-acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic3D_center_halo20", save_name="acoustic3D_center_halo20", freetop=false, threshold=0.001)
-acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic3D_center_halo40", save_name="acoustic3D_center_halo40", freetop=false, threshold=0.001)
+# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic3D_center_halo5", save_name="acoustic3D_center_halo5", freetop=false, threshold=0.001)
+# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic3D_center_halo10", save_name="acoustic3D_center_halo10", freetop=false, threshold=0.001)
+# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic3D_center_halo20", save_name="acoustic3D_center_halo20", freetop=false, threshold=0.001)
+# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic3D_center_halo40", save_name="acoustic3D_center_halo40", freetop=false, threshold=0.001)
 
 
-# # benchmark
-# nx = ny = nz = 2 .^ (3:7) .+ 1
-# lx = ly = lz = (nx .- 1) .* 10.0
-# for i = eachindex(nx)
-#     vel = 2000 .* ones(nx[i], ny[i], nz[i])
-#     possrcs = zeros(Int,1,3)
-#     possrcs[1,:] = [div(nx[i], 2, RoundUp), div(ny[i], 2, RoundUp), div(nz[i], 2, RoundUp)]
-#     acoustic2D_xPU(lx[i], ly[i], lz[i], 1, vel, possrcs; do_bench=true, freetop=false)
-# end
+# benchmark
+nx = ny = nz = [32, 64, 128, 256, 320, 400] .+ 1
+lx = ly = lz = (nx .- 1) .* 10.0
+for i = eachindex(nx)
+    vel = 2000 .* ones(nx[i], ny[i], nz[i])
+    possrcs = zeros(Int,1,3)
+    possrcs[1,:] = [div(nx[i], 2, RoundUp), div(ny[i], 2, RoundUp), div(nz[i], 2, RoundUp)]
+    acoustic3D_xPU(lx[i], ly[i], lz[i], 1, vel, possrcs; do_bench=true, freetop=false)
+end
