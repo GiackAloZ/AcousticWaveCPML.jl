@@ -3,18 +3,15 @@ using BenchmarkTools
 using Printf
 using HDF5
 
-import Logging
-Logging.disable_logging(Logging.Warn)
-
 default(size=(1000, 600), framestyle=:box,grid=false,margin=20pt)
 
-include("utils.jl")
+include("../utils.jl")
 
 # folders for results
-DOCS_FLD = joinpath(dirname(@__DIR__), "docs")
+DOCS_FLD = joinpath(dirname(dirname(@__DIR__)), "docs")
 TMP_FLD = joinpath(DOCS_FLD, "tmp")
 
-# Disable interactive visualization on GPU environment
+# Disable interactive visualization
 ENV["GKSwstype"]="nul"
 
 using ParallelStencil
@@ -293,10 +290,10 @@ end
         # check benchmark
         confidence = 0.95
         med_range = 0.05
-        pass, ci, tol_range, t_it_med = check_trial(trial, confidence, med_range)
+        pass, ci, tol_range, t_it_mean = check_trial(trial, confidence, med_range)
         t_it = minimum(trial).time / 1e9
         if !pass
-            @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it_med, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
+            @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it_mean, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
         end
         # allocated memory [GB]
         alloc_mem = (
@@ -405,38 +402,3 @@ end
 
     return nothing
 end
-
-# # simple constant velocity model
-# nx, ny, nz = 101, 101, 101
-# vel = 2000.0 .* ones(Float64, nx, ny, nz);
-# # one source in the center
-# possrcs = zeros(Int,1,3)
-# possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
-
-# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic3D_center_halo5", save_name="acoustic3D_center_halo5", freetop=false, threshold=0.001)
-# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic3D_center_halo10", save_name="acoustic3D_center_halo10", freetop=false, threshold=0.001)
-# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic3D_center_halo20", save_name="acoustic3D_center_halo20", freetop=false, threshold=0.001)
-# acoustic3D_xPU(1000.0, 1000.0, 1000.0, 1000, vel, possrcs; halo=40, rcoef=0.00001, do_vis=true, gif_name="acoustic3D_center_halo40", save_name="acoustic3D_center_halo40", freetop=false, threshold=0.001)
-
-
-# benchmark single runs
-nx = ny = nz = [32, 64, 128, 256, 320, 400] .+ 1
-lx = ly = lz = (nx .- 1) .* 10.0
-for i = eachindex(nx)
-    vel = 2000 .* ones(nx[i], ny[i], nz[i])
-    possrcs = zeros(Int,1,3)
-    possrcs[1,:] = [div(nx[i], 2, RoundUp), div(ny[i], 2, RoundUp), div(nz[i], 2, RoundUp)]
-    acoustic3D_xPU(lx[i], ly[i], lz[i], 1, vel, possrcs; do_bench=true, freetop=false)
-end
-
-# benchmark full run
-# t_tic = Base.time()
-# nx = ny = nz = 128
-# nt = 1000
-# lx = ly = lz = (nx - 1) * 10.0
-# vel = 2000 .* ones(nx, ny, nz)
-# possrcs = zeros(Int,1,3)
-# possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
-# acoustic3D_xPU(lx, ly, lz, nt, vel, possrcs; do_vis=false, do_save=false, freetop=false)
-# t_toc = Base.time() - t_tic
-# @printf("size = %dx%dx%d, nt = %d, time = %1.3e sec\n", nx, ny, nz, nt, t_toc)

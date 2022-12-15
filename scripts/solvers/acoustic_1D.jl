@@ -2,9 +2,15 @@ using Plots
 using BenchmarkTools
 using Printf
 
-include("utils.jl")
+default(size=(1000, 600), framestyle=:box,grid=false,margin=20pt)
 
-DOCS_FLD = joinpath(dirname(@__DIR__), "docs")
+include("../utils.jl")
+
+# folders for results
+DOCS_FLD = joinpath(dirname(dirname(@__DIR__)), "docs")
+
+# Disable interactive visualization
+ENV["GKSwstype"]="nul"
 
 @views function update_ψ!(ψ_l, ψ_r, pcur,
                           halo, _dx,
@@ -158,6 +164,11 @@ end
         return nothing
     end
 
+    # create results folders
+    if do_vis
+        mkpath(DOCS_FLD)
+    end
+
     # time loop
     anim = Animation()
     for it=1:nt
@@ -193,10 +204,3 @@ end
 
     return nothing
 end
-
-# simple constant velocity model
-vel = 2000 .* ones(Float64, 201)
-
-acoustic1D(2000.0, 500, vel; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic1D_halo5")
-acoustic1D(2000.0, 500, vel; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic1D_halo10")
-acoustic1D(2000.0, 500, vel; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic1D_halo20")

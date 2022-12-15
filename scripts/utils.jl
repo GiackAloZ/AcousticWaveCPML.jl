@@ -67,5 +67,5 @@ function check_trial(trial::BenchmarkTools.Trial, confidence=0.95, range=0.05)
     test = SignTest(data, m)
     ci_left, ci_right = confint(test, level=confidence)
     tol_left, tol_right = (m - m*range, m + m*range)
-    return ci_left >= tol_left && ci_right <= tol_right, (ci_left / 1e9, ci_right / 1e9), (tol_left / 1e9, tol_right / 1e9), m
+    return ci_left >= tol_left && ci_right <= tol_right, (ci_left / 1e9, ci_right / 1e9), (tol_left / 1e9, tol_right / 1e9), m / 1e9
 end

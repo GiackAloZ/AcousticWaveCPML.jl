@@ -1,0 +1,8 @@
+size = 33x33, time = 9.625e-06 sec, Teff = 15.141 GB/s, memory = 0.000 GB
+size = 65x65, time = 2.754e-05 sec, Teff = 12.838 GB/s, memory = 0.000 GB
+size = 129x129, time = 7.856e-05 sec, Teff = 12.295 GB/s, memory = 0.001 GB
+size = 257x257, time = 2.473e-04 sec, Teff = 12.039 GB/s, memory = 0.002 GB
+size = 513x513, time = 9.423e-04 sec, Teff = 10.767 GB/s, memory = 0.007 GB
+size = 1025x1025, time = 5.263e-03 sec, Teff = 7.042 GB/s, memory = 0.027 GB
+size = 2049x2049, time = 2.049e-02 sec, Teff = 6.894 GB/s, memory = 0.103 GB
+size = 4097x4097, time = 8.016e-02 sec, Teff = 6.872 GB/s, memory = 0.408 GB
