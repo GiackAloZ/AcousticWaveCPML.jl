@@ -338,7 +338,7 @@ end
 # nx = ny = 128
 # nt = 1000
 # lx = ly = (nx - 1) * 10.0
-# vel = 2000 .* ones(nx[i], ny[i])
+# vel = 2000 .* ones(nx, ny)
 # possrcs = zeros(Int,1,2)
 # possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp)]
 # acoustic2D_xPU(lx, ly, nt, vel, possrcs; do_vis=false, freetop=false)
