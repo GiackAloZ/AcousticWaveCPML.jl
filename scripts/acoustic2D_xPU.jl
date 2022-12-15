@@ -9,6 +9,7 @@ default(size=(1000, 600), framestyle=:box,grid=false,margin=20pt)
 
 include("utils.jl")
 
+# folders for results
 DOCS_FLD = joinpath(dirname(@__DIR__), "docs")
 
 using ParallelStencil
@@ -236,10 +237,10 @@ end
         # # check benchmark
         confidence = 0.95
         med_range = 0.05
-        pass, ci, tol_range = check_trial(trial, confidence, med_range)
-        t_it = median(trial).time / 1e9
+        pass, ci, tol_range, t_it_med = check_trial(trial, confidence, med_range)
+        t_it = minimum(trial).time / 1e9
         if !pass
-            @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
+            @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it_med, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
         end
         # allocated memory [GB]
         alloc_mem = (
@@ -258,8 +259,13 @@ end
         ) * sizeof(Float64) / 1e9
         # effective memory throughput [GB/s]
         T_eff = A_eff / t_it
-        @printf("nx = %d, ny = %d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, t_it, T_eff, alloc_mem)
+        @printf("size = %dx%d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, t_it, T_eff, alloc_mem)
         return nothing
+    end
+
+    # create results folders
+    if do_vis
+        mkpath(DOCS_FLD)
     end
 
     # time loop
@@ -317,7 +323,7 @@ end
     return nothing
 end
 
-# benchmark
+# benchmark single runs
 nx = ny = 2 .^ (5:12) .+ 1
 lx = ly = (nx .- 1) .* 10.0
 for i = eachindex(nx)
@@ -326,3 +332,15 @@ for i = eachindex(nx)
     possrcs[1,:] = [div(nx[i], 2, RoundUp), div(ny[i], 2, RoundUp)]
     acoustic2D_xPU(lx[i], ly[i], 1, vel, possrcs; do_bench=true, freetop=false)
 end
+
+# # benchmark full run
+# t_tic = Base.time()
+# nx = ny = 128
+# nt = 1000
+# lx = ly = (nx - 1) * 10.0
+# vel = 2000 .* ones(nx[i], ny[i])
+# possrcs = zeros(Int,1,2)
+# possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp)]
+# acoustic2D_xPU(lx, ly, nt, vel, possrcs; do_vis=false, freetop=false)
+# t_toc = Base.time() - t_tic
+# @printf("size = %dx%d, nt = %d, time = %1.3e sec\n", nx, ny, nt, t_toc)
