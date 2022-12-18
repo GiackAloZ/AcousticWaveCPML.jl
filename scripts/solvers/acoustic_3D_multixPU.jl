@@ -370,21 +370,21 @@ end
             end
             # allocated memory [GB]
             alloc_mem = (
-                        3*(nx*ny*nz) +
-                        2*((halo+1)*ny*nz) + 2*(halo*ny*nz) +
-                        2*((halo+1)*nx*nz) + 2*(halo*nx*nz) +
-                        2*((halo+1)*nx*ny) + 2*(halo*nx*ny) +
+                        3*(gnx*gny*gnz) +
+                        2*((halo+1)*gny*gnz) + 2*(halo*gny*gnz) +
+                        2*((halo+1)*gnx*gnz) + 2*(halo*gnx*gnz) +
+                        2*((halo+1)*gnx*gny) + 2*(halo*gnx*gny) +
                         4*3*(halo+1) + 4*3*halo
                         ) * sizeof(Float64) / 1e9
             # effective memory access [GB]
             A_eff = (
-                (halo+1)*ny*nz*2*(2 + 1) +         # update_ψ_x!
-                (halo+1)*nx*nz*2*(2 + 1) +         # update_ψ_y!
-                (halo+1)*nx*ny*2*(2 + 1) +         # update_ψ_z!
-                (halo+1)*ny*nz*2*(1 + 1) +         # update ξ_x in update_p!
-                (halo+1)*nx*nz*2*(1 + 1) +         # update ξ_y in update_p!
-                (halo+1)*nx*ny*2*(1 + 1) +         # update ξ_z in update_p!
-                4*nx*ny*nz                         # update_p! (inner points)
+                (halo+1)*gny*gnz*2*(2 + 1) +         # update_ψ_x!
+                (halo+1)*gnx*gnz*2*(2 + 1) +         # update_ψ_y!
+                (halo+1)*gnx*gny*2*(2 + 1) +         # update_ψ_z!
+                (halo+1)*gny*gnz*2*(1 + 1) +         # update ξ_x in update_p!
+                (halo+1)*gnx*gnz*2*(1 + 1) +         # update ξ_y in update_p!
+                (halo+1)*gnx*gny*2*(1 + 1) +         # update ξ_z in update_p!
+                4*gnx*gny*gnz                        # update_p! (inner points)
             ) * sizeof(Float64) / 1e9
             # effective memory throughput [GB/s]
             T_eff = A_eff / t_it
@@ -416,8 +416,6 @@ end
         gather!(vel_inner, vel_global)
     end
 
-    @show coords, dims
-
     # time loop
     for it=1:nt
         pold, pcur, pnew = kernel!(
@@ -429,7 +427,7 @@ end
             a_y_l, a_y_r, b_K_y_l, b_K_y_r,
             a_z_hl, a_z_hr, b_K_z_hl, b_K_z_hr,
             a_z_l, a_z_r, b_K_z_l, b_K_z_r,
-            possrcs, dt2srctf, it,
+            possrcs_a, dt2srctf, it,
             gnx, gny, gnz,
             dims, coords, b_width
         )
@@ -453,7 +451,7 @@ end
             @show maxabsp
             pview[(pview .> plims[1] * threshold) .& (pview .< plims[2] * threshold)] .= NaN
             heatmap!(dx:dx:lx-dx, dy:dy:ly-dy, pview';
-                  xlims=(dx,lx-dx), ylims=(dy,ly-dy), clims=(plims[1], plims[2]), aspect_ratio=:equal,
+                  xlims=(0,lx), ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx", ylabel="ly", clabel="pressure", c=:diverging_bwr_20_95_c54_n256,
                   title="3D Acoustic CPML (nz/2 slice)\n(halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\n max abs pressure = $(maxabsp)"
             )
