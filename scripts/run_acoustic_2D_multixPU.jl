@@ -1,6 +1,6 @@
 include("solvers/acoustic_2D_multixPU.jl")
 
-# simple constant velocity model (must be run with 9 MPI processes)
+# simple constant velocity model (must be run with 4 MPI processes)
 nx, ny = 101, 101
 
 vel_func(x,y) = 2000.0

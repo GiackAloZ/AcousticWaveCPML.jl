@@ -17,7 +17,7 @@ import MPI
 
 using ParallelStencil
 using ParallelStencil.FiniteDifferences2D
-const USE_GPU = false
+const USE_GPU = true
 @static if USE_GPU
     using CUDA
     @init_parallel_stencil(CUDA, Float64, 2)
@@ -197,15 +197,15 @@ end
     halo::Integer = 20,
     rcoef::Real = 0.0001,
     do_vis::Bool = true,
-    do_bench::Bool = false,
     nvis::Integer = 5,
     gif_name::String = "acoustic2D_multixPU",
     plims::Vector{<:Real} = [-3, 3],
     threshold::Real = 0.01,
-    freetop::Bool = true
+    freetop::Bool = true,
+    init_MPI::Bool = true
 )
     # Initialize global grid
-    me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, 1)
+    me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, 1; init_MPI=init_MPI)
     b_width = (8, 8)                    # hide communication parameters
     # Physics
     f0 = 8.0                            # dominating frequency [Hz]
@@ -278,51 +278,6 @@ end
     possrcs_a = Data.Array( possrcs )
     dt2srctf = Data.Array( dt2srctf )
 
-    # benchmarking instead of actual computation
-    if do_bench
-        # run benchmark trial
-        trial = @benchmark $kernel!(
-            $pold, $pcur, $pnew, $fact, $_dx, $_dx2, $_dy, $_dy2,
-            $halo, $ψ_x_l, $ψ_x_r, $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r,
-            $a_x_hl, $a_x_hr, $b_K_x_hl, $b_K_x_hr,
-            $a_x_l, $a_x_r, $b_K_x_l, $b_K_x_r,
-            $a_y_hl, $a_y_hr, $b_K_y_hl, $b_K_y_hr,
-            $a_y_l, $a_y_r, $b_K_y_l, $b_K_y_r,
-            $possrcs_a, $dt2srctf, 1,
-            $gnx, $gny,
-            $dims, $coords, $b_width
-        )
-        # check benchmark
-        if me == 0
-            confidence = 0.95
-            med_range = 0.05
-            pass, ci, tol_range, t_it_mean = check_trial(trial, confidence, med_range)
-            t_it = minimum(trial).time / 1e9
-            if !pass
-                @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it_mean, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
-            end
-            # allocated memory [GB]
-            alloc_mem = (
-                        3*(gnx*gny) +
-                        2*((halo+1)*gny) + 2*(halo*gny) +
-                        2*((halo+1)*gnx) + 2*(halo*gnx) +
-                        4*2*(halo+1) + 4*2*halo
-                        ) * sizeof(Float64) / 1e9
-            # effective memory access [GB]
-            A_eff = (
-                (halo+1)*gny*2*(2 + 1) +         # update_ψ_x!
-                (halo+1)*gnx*2*(2 + 1) +         # update_ψ_y!
-                (halo+1)*gny*2*(1 + 1) +         # update ξ_x in update_p!
-                (halo+1)*gnx*2*(1 + 1) +         # update ξ_y in update_p!
-                4*nx*ny                          # update_p! (inner points)
-            ) * sizeof(Float64) / 1e9
-            # effective memory throughput [GB/s]
-            T_eff = A_eff / t_it
-            @printf("size = %dx%d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, t_it, T_eff, alloc_mem)
-            return nothing
-        end
-    end
-
     # create results folders
     if do_vis
         mkpath(DOCS_FLD)
@@ -341,8 +296,15 @@ end
         gather!(vel_inner, vel_global)
     end
 
+    # disable garbage collection
+    GC.gc(); GC.enable(false)
+    # time for benchmark
+    t_tic = 0.0; niter = 0
     # time loop
     for it=1:nt
+        # skip first 200 iterations
+        if (it==201) t_tic = tic(); niter = 0 end
+
         pold, pcur, pnew = kernel!(
             pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2,
             halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r,
@@ -355,6 +317,7 @@ end
             dims, coords, b_width
         )
 
+        niter += 1
 
         # visualization
         if do_vis && (it % nvis == 0)
@@ -393,10 +356,39 @@ end
             frame(anim)
         end
     end
+    # reenable garbage collection
+    GC.enable(true)
+
+    # compute performance
+    t_toc = toc()
+    t_it  = t_toc / niter                  # Execution time per iteration [s]
+    # allocated memory [GB]
+    local_alloc_mem = (
+        3*(nx*ny) +
+        2*((halo+1)*ny) + 2*(halo*ny) +
+        2*((halo+1)*nx) + 2*(halo*nx) +
+        4*2*(halo+1) + 4*2*halo
+    ) * sizeof(Float64) / 1e9
+    global_alloc_mem = nprocs * local_alloc_mem
+    # effective memory access [GB]
+    A_eff = (
+    (halo+1)*gny*2*(2 + 1) +         # update_ψ_x!
+    (halo+1)*gnx*2*(2 + 1) +         # update_ψ_y!
+    (halo+1)*gny*2*(1 + 1) +         # update ξ_x in update_p!
+    (halo+1)*gnx*2*(1 + 1) +         # update ξ_y in update_p!
+    4*nx*ny                          # update_p! (inner points)
+    ) * sizeof(Float64) / 1e9
+    # effective memory throughput [GB/s]
+    T_eff = A_eff / t_it
+
+    if me == 0 @printf("size = %dx%d, total time = %1.3e sec, time per it = %1.3e sec, Teff = %1.3f GB/s, local memory = %1.3f GB, global memory = %1.3f GB\n", nx, ny, t_toc, t_it, T_eff, local_alloc_mem, global_alloc_mem) end
+
     # save visualization
     if me == 0 && do_vis
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
     end
+
+    finalize_global_grid(;finalize_MPI=init_MPI)
 
     return nothing
 end
