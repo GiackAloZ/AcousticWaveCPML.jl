@@ -76,40 +76,43 @@ end
                                              a_y_l, a_y_r, b_K_y_l, b_K_y_r,
                                              ishift, jshift,
                                              gnx, gny)
-    # pressure derivatives in space
-    d2p_dx2 = (pcur[i+1,j] - 2.0*pcur[i,j] + pcur[i-1,j])*_dx2
-    d2p_dy2 = (pcur[i,j+1] - 2.0*pcur[i,j] + pcur[i,j-1])*_dy2
+    # check inside domain
+    if i >= 2 && i <= nx-1 && j >= 2 && j <= ny-1
+        # pressure derivatives in space
+        d2p_dx2 = (pcur[i+1,j] - 2.0*pcur[i,j] + pcur[i-1,j])*_dx2
+        d2p_dy2 = (pcur[i,j+1] - 2.0*pcur[i,j] + pcur[i,j-1])*_dy2
 
-    damp = 0.0
-    # x boundaries
-    if i + ishift <= halo+1
-        # left boundary
-        dψ_x_dx = (ψ_x_l[i,j] - ψ_x_l[i-1,j])*_dx
-        ξ_x_l[i-1,j] = b_K_x_l[i-1] * ξ_x_l[i-1,j] + a_x_l[i-1] * (d2p_dx2 + dψ_x_dx)
-        damp += fact[i,j] * (dψ_x_dx + ξ_x_l[i-1,j])
-    elseif i + ishift >= gnx - halo
-        # right boundary
-        ii = i - (nx - halo) + 2
-        dψ_x_dx = (ψ_x_r[ii,j] - ψ_x_r[ii-1,j])*_dx
-        ξ_x_r[ii-1,j] = b_K_x_r[ii-1] * ξ_x_r[ii-1,j] + a_x_r[ii-1] * (d2p_dx2 + dψ_x_dx)
-        damp += fact[i,j] * (dψ_x_dx + ξ_x_r[ii-1,j])
-    end
-    # y boundaries
-    if j + jshift <= halo+1
-        # left boundary
-        dψ_y_dy = (ψ_y_l[i,j] - ψ_y_l[i,j-1])*_dy
-        ξ_y_l[i,j-1] = b_K_y_l[j-1] * ξ_y_l[i,j-1] + a_y_l[j-1] * (d2p_dy2 + dψ_y_dy)
-        damp += fact[i,j] * (dψ_y_dy + ξ_y_l[i,j-1])
-    elseif j + jshift >= gny - halo
-        # right boundary
-        jj = j - (ny - halo) + 2
-        dψ_y_dy = (ψ_y_r[i,jj] - ψ_y_r[i,jj-1])*_dy
-        ξ_y_r[i,jj-1] = b_K_y_r[jj-1] * ξ_y_r[i,jj-1] + a_y_r[jj-1] * (d2p_dy2 + dψ_y_dy)
-        damp += fact[i,j] * (dψ_y_dy + ξ_y_r[i,jj-1])
-    end
+        damp = 0.0
+        # x boundaries
+        if i + ishift <= halo+1
+            # left boundary
+            dψ_x_dx = (ψ_x_l[i,j] - ψ_x_l[i-1,j])*_dx
+            ξ_x_l[i-1,j] = b_K_x_l[i-1] * ξ_x_l[i-1,j] + a_x_l[i-1] * (d2p_dx2 + dψ_x_dx)
+            damp += fact[i,j] * (dψ_x_dx + ξ_x_l[i-1,j])
+        elseif i + ishift >= gnx - halo
+            # right boundary
+            ii = i - (nx - halo) + 2
+            dψ_x_dx = (ψ_x_r[ii,j] - ψ_x_r[ii-1,j])*_dx
+            ξ_x_r[ii-1,j] = b_K_x_r[ii-1] * ξ_x_r[ii-1,j] + a_x_r[ii-1] * (d2p_dx2 + dψ_x_dx)
+            damp += fact[i,j] * (dψ_x_dx + ξ_x_r[ii-1,j])
+        end
+        # y boundaries
+        if j + jshift <= halo+1
+            # left boundary
+            dψ_y_dy = (ψ_y_l[i,j] - ψ_y_l[i,j-1])*_dy
+            ξ_y_l[i,j-1] = b_K_y_l[j-1] * ξ_y_l[i,j-1] + a_y_l[j-1] * (d2p_dy2 + dψ_y_dy)
+            damp += fact[i,j] * (dψ_y_dy + ξ_y_l[i,j-1])
+        elseif j + jshift >= gny - halo
+            # right boundary
+            jj = j - (ny - halo) + 2
+            dψ_y_dy = (ψ_y_r[i,jj] - ψ_y_r[i,jj-1])*_dy
+            ξ_y_r[i,jj-1] = b_K_y_r[jj-1] * ξ_y_r[i,jj-1] + a_y_r[jj-1] * (d2p_dy2 + dψ_y_dy)
+            damp += fact[i,j] * (dψ_y_dy + ξ_y_r[i,jj-1])
+        end
 
-    # update pressure
-    pnew[i,j] = 2.0 * pcur[i,j] - pold[i,j] + fact[i,j] * (d2p_dx2 + d2p_dy2) + damp
+        # update pressure
+        pnew[i,j] = 2.0 * pcur[i,j] - pold[i,j] + fact[i,j] * (d2p_dx2 + d2p_dy2) + damp
+    end
 
     return nothing
 end
@@ -168,19 +171,20 @@ end
 
     @hide_communication b_width begin
          # update presure and ξ arrays
-        @parallel (2:nx-1,2:ny-1) update_p!(pold, pcur, pnew, halo, fact,
-                                            _dx, _dx2, _dy, _dy2, nx, ny,
-                                            ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r,
-                                            ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r,
-                                            a_x_l, a_x_r, b_K_x_l, b_K_x_r,
-                                            a_y_l, a_y_r, b_K_y_l, b_K_y_r,
-                                            ishift, jshift,
-                                            gnx, gny)
-        # inject sources
-        @parallel (1:size(possrcs,1)) inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, nx, ny)
+        @parallel update_p!(pold, pcur, pnew, halo, fact,
+                            _dx, _dx2, _dy, _dy2, nx, ny,
+                            ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r,
+                            ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r,
+                            a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+                            a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+                            ishift, jshift,
+                            gnx, gny)
         # exchange new pressure
         update_halo!(pnew)
     end
+
+    # inject sources
+    @parallel (1:size(possrcs,1)) inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, nx, ny)
 
     return pcur, pnew, pold
 end
