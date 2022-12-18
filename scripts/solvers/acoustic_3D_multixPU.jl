@@ -255,10 +255,11 @@ end
     save_name::String = "acoustic3D_multixPU",
     plims::Vector{<:Real} = [-3, 3],
     threshold::Real = 0.01,
-    freetop::Bool = true
+    freetop::Bool = true,
+    init_MPI::Bool = true
 )
     # Initialize global grid
-    me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, nz)
+    me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, nz; init_MPI=init_MPI)
     b_width = (8, 8, 4)                 # hide communication parameters
     # Physics
     f0 = 8.0                            # dominating frequency [Hz]
@@ -493,7 +494,7 @@ end
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
     end
 
-    finalize_global_grid()
+    finalize_global_grid(;finalize_MPI=init_MPI)
 
     return nothing
 end
