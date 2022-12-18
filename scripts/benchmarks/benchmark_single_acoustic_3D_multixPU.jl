@@ -4,8 +4,8 @@ include("../solvers/acoustic_3D_multixPU.jl")
 
 MPI.Init()
 
-nxs = nys = nzs = (2 .^ (5:14)) .+ 1
-nts     = round.(Int, [1e5, 1e5, 1e5, 1e5, 1e5, 1e4, 1e4, 1e3, 1e3, 1e3])
+nxs = nys = nzs = [32, 64, 128, 256, 320, 400, 450, 512, 550, 600, 650] .+ 1
+nts     = round.(Int, [1e3, 1e3, 1e3, 1e2, 1e2, 1e2, 1e2, 1e2, 1e2, 1e2, 1e2])
 vel_func(x,y) = 2000.0
 for (nx, ny, nt) in zip(nxs, nys, nts)
     # simple constant velocity model (must be run with 1 MPI process)
