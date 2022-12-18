@@ -252,7 +252,6 @@ end
     rcoef::Real = 0.0001,
     do_vis::Bool = true,
     do_save::Bool = true,
-    do_bench::Bool = false,
     nvis::Integer = 5,
     nsave::Integer = 100,
     gif_name::String = "acoustic3D_multixPU",
@@ -347,58 +346,6 @@ end
     possrcs_a = Data.Array( possrcs )
     dt2srctf = Data.Array( dt2srctf )
 
-    # benchmarking instead of actual computation
-    if do_bench
-        # run benchmark trial
-        trial = @benchmark $kernel!(
-            $pold, $pcur, $pnew, $fact, $_dx, $_dx2, $_dy, $_dy2, $_dz, $_dz2,
-            $halo, $ψ_x_l, $ψ_x_r, $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r, $ψ_z_l, $ψ_z_r, $ξ_z_l, $ξ_z_r,
-            $a_x_hl, $a_x_hr, $b_K_x_hl, $b_K_x_hr,
-            $a_x_l, $a_x_r, $b_K_x_l, $b_K_x_r,
-            $a_y_hl, $a_y_hr, $b_K_y_hl, $b_K_y_hr,
-            $a_y_l, $a_y_r, $b_K_y_l, $b_K_y_r,
-            $a_z_hl, $a_z_hr, $b_K_z_hl, $b_K_z_hr,
-            $a_z_l, $a_z_r, $b_K_z_l, $b_K_z_r,
-            $possrcs_a, $dt2srctf, 1,
-            $gnx, $gny, $gnz,
-            $dims, $coords, $b_width
-        )
-
-        if me == 0
-            # check benchmark
-            confidence = 0.95
-            med_range = 0.05
-            pass, ci, tol_range, t_it_mean = check_trial(trial, confidence, med_range)
-            t_it = minimum(trial).time / 1e9
-            if !pass
-                @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it_mean, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
-            end
-            # allocated memory [GB]
-            alloc_mem = (
-                        3*(gnx*gny*gnz) +
-                        2*((halo+1)*gny*gnz) + 2*(halo*gny*gnz) +
-                        2*((halo+1)*gnx*gnz) + 2*(halo*gnx*gnz) +
-                        2*((halo+1)*gnx*gny) + 2*(halo*gnx*gny) +
-                        4*3*(halo+1) + 4*3*halo
-                        ) * sizeof(Float64) / 1e9
-            # effective memory access [GB]
-            A_eff = (
-                (halo+1)*gny*gnz*2*(2 + 1) +         # update_ψ_x!
-                (halo+1)*gnx*gnz*2*(2 + 1) +         # update_ψ_y!
-                (halo+1)*gnx*gny*2*(2 + 1) +         # update_ψ_z!
-                (halo+1)*gny*gnz*2*(1 + 1) +         # update ξ_x in update_p!
-                (halo+1)*gnx*gnz*2*(1 + 1) +         # update ξ_y in update_p!
-                (halo+1)*gnx*gny*2*(1 + 1) +         # update ξ_z in update_p!
-                4*gnx*gny*gnz                        # update_p! (inner points)
-            ) * sizeof(Float64) / 1e9
-            # effective memory throughput [GB/s]
-            T_eff = A_eff / t_it
-            @printf("size = %dx%dx%d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, nz, t_it, T_eff, alloc_mem)
-        end
-        
-        return nothing
-    end
-
     # create results folders
     if me == 0 && (do_vis || do_save)
         mkpath(DOCS_FLD)
@@ -421,8 +368,14 @@ end
         gather!(vel_inner, vel_global)
     end
 
+    # disable garbage collection
+    GC.gc(); GC.enable(false)
+    # time for benchmark
+    t_tic = 0.0; niter = 0
     # time loop
     for it=1:nt
+        # skip first 20 iterations
+        if (it==20) t_tic = tic(); niter = 0 end
         pold, pcur, pnew = kernel!(
             pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
             halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r, ψ_z_l, ψ_z_r, ξ_z_l, ξ_z_r,
@@ -436,6 +389,8 @@ end
             gnx, gny, gnz,
             dims, coords, b_width
         )
+
+        niter += 1
 
         # visualization
         if do_vis && (it % nvis == 0)
@@ -493,6 +448,36 @@ end
             h5write(joinpath(TMP_FLD, "$(save_name)_it$(it)_proc$(me).h5"), "pcur", Array(pcur))
         end
     end
+    # reenable garbage collection
+    GC.enable(true)
+
+    # compute performance
+    t_toc = toc()
+    t_it  = t_toc / niter                  # Execution time per iteration [s]
+    # allocated memory [GB]
+    local_alloc_mem = (
+        3*(nx*ny*nz) +
+        2*((halo+1)*ny*nz) + 2*(halo*ny*nz) +
+        2*((halo+1)*nx*nz) + 2*(halo*nx*nz) +
+        2*((halo+1)*nx*ny) + 2*(halo*nx*ny) +
+        4*3*(halo+1) + 4*3*halo
+    ) * sizeof(Float64) / 1e9
+    global_alloc_mem = nprocs * local_alloc_mem
+    # effective memory access [GB]
+    A_eff = (
+        (halo+1)*gny*gnz*2*(2 + 1) +         # update_ψ_x!
+        (halo+1)*gnx*gnz*2*(2 + 1) +         # update_ψ_y!
+        (halo+1)*gnx*gny*2*(2 + 1) +         # update_ψ_z!
+        (halo+1)*gny*gnz*2*(1 + 1) +         # update ξ_x in update_p!
+        (halo+1)*gnx*gnz*2*(1 + 1) +         # update ξ_y in update_p!
+        (halo+1)*gnx*gny*2*(1 + 1) +         # update ξ_z in update_p!
+        4*gnx*gny*gnz                        # update_p! (inner points)
+    ) * sizeof(Float64) / 1e9
+    # effective memory throughput [GB/s]
+    T_eff = A_eff / t_it
+
+    if me == 0 @printf("size = %dx%dx%d, total time = %1.3e sec, time per it = %1.3e sec, Teff = %1.3f GB/s, local memory = %1.3f GB, global memory = %1.3f GB\n", nx, ny, nz, t_toc, t_it, T_eff, local_alloc_mem, global_alloc_mem) end
+    
     # save visualization
     if me == 0 && do_vis
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
