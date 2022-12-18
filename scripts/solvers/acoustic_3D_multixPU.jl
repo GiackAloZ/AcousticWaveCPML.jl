@@ -29,6 +29,7 @@ else
     @init_parallel_stencil(Threads, Float64, 3)
 end
 
+# global maximum
 max_g(A) = (max_l = maximum(A); MPI.Allreduce(max_l, MPI.MAX, MPI.COMM_WORLD))
 
 @parallel_indices (i,j,k) function update_ψ_x_l!(ψ_x_l, pcur,
@@ -171,10 +172,10 @@ end
     a_z_hl, a_z_hr, b_K_z_hl, b_K_z_hr,
     a_z_l, a_z_r, b_K_z_l, b_K_z_r,
     possrcs, dt2srctf, it,
+    gnx, gny, gnz,
     dims, coords, b_width
 )
     nx, ny, nz = size(pcur)
-    gnx, gny, gnz = nx_g(), ny_g(), nz_g()
     # compute shifting to
     ishift = coords[1] * (nx-2)
     jshift = coords[2] * (ny-2)
@@ -185,7 +186,8 @@ end
         @parallel_async (1:halo+1,1:ny,1:nz) update_ψ_x_l!(ψ_x_l, pcur,
                                                            halo, _dx, nx,
                                                            a_x_hl, b_K_x_hl)
-    elseif coords[1] == dims[1]-1
+    end
+    if coords[1] == dims[1]-1
         @parallel_async (1:halo+1,1:ny,1:nz) update_ψ_x_r!(ψ_x_r, pcur,
                                                            halo, _dx, nx,
                                                            a_x_hr, b_K_x_hr)
@@ -194,7 +196,8 @@ end
         @parallel_async (1:nx,1:halo+1,1:nz) update_ψ_y_l!(ψ_y_l, pcur,
                                                            halo, _dy, ny,
                                                            a_y_hl, b_K_y_hl)
-    elseif coords[2] == dims[2]-1
+    end
+    if coords[2] == dims[2]-1
         @parallel_async (1:nx,1:halo+1,1:nz) update_ψ_y_r!(ψ_y_r, pcur,
                                                            halo, _dy, ny,
                                                            a_y_hr, b_K_y_hr)
@@ -203,7 +206,8 @@ end
         @parallel_async (1:nx,1:ny,1:halo+1) update_ψ_z_l!(ψ_z_l, pcur,
                                                            halo, _dz, nz,
                                                            a_z_hl, b_K_z_hl)
-    elseif coords[3] == dims[3]-1
+    end
+    if coords[3] == dims[3]-1
         @parallel_async (1:nx,1:ny,1:halo+1) update_ψ_z_r!(ψ_z_r, pcur,
                                                            halo, _dz, nz,
                                                            a_z_hr, b_K_z_hr)
@@ -263,9 +267,10 @@ end
     npower        = 2.0
     K_max         = 1.0
     # Derived numerics
-    dx = lx / nx_g()                    # grid step size x-direction [m]
-    dy = ly / ny_g()                    # grid step size y-direction [m]
-    dz = lz / nz_g()                    # grid step size z-direction [m]
+    gnx, gny, gnz = nx_g(), ny_g(), nz_g()  # global grid size
+    dx = lx / (gnx-1)                    # grid step size x-direction [m]
+    dy = ly / (gny-1)                    # grid step size y-direction [m]
+    dz = lz / (gnz-1)                    # grid step size z-direction [m]
     dt = 0.0012                         # 1.0 / (sqrt(1.0/(dx^2) + 1.0/(dy^2) + 1.0/(dz^2))) / vel_max  # timestep size (CFL + Courant condition) [s]
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # Initialize local velocity model
@@ -350,6 +355,7 @@ end
             $a_z_hl, $a_z_hr, $b_K_z_hl, $b_K_z_hr,
             $a_z_l, $a_z_r, $b_K_z_l, $b_K_z_r,
             $possrcs_a, $dt2srctf, 1,
+            $gnx, $gny, $gnz,
             $dims, $coords, $b_width
         )
 
@@ -397,10 +403,21 @@ end
         end
     end
 
-    # create animation
-    if me == 0 && do_vis
-        anim = Animation()
+    # create animation and allocate arrays for global array
+    if do_vis
+        if me == 0 anim = Animation() end
+        nx_v,ny_v,nz_v = (nx-2)*dims[1],(ny-2)*dims[2],(nz-2)*dims[3]
+        if (nx_v*ny_v*nz_v*sizeof(Data.Number) > 0.8*Sys.free_memory()) error("Not enough memory for saving.") end
+        pcur_global = zeros(nx_v, ny_v, nz_v) # global array for saving
+        vel_global = zeros(nx_v, ny_v, nz_v)
+        pcur_inner = zeros(nx-2, ny-2, nz-2) # no halo local array for saving
+        vel_inner = zeros(nx-2, ny-2, nz-2) # no halo local array for saving
+        vel_inner .= vel[2:end-1,2:end-1,2:end-1]
+        gather!(vel_inner, vel_global)
     end
+
+    @show coords, dims
+
     # time loop
     for it=1:nt
         pold, pcur, pnew = kernel!(
@@ -413,32 +430,36 @@ end
             a_z_hl, a_z_hr, b_K_z_hl, b_K_z_hr,
             a_z_l, a_z_r, b_K_z_l, b_K_z_r,
             possrcs, dt2srctf, it,
+            gnx, gny, gnz,
             dims, coords, b_width
         )
 
         # visualization
+        if do_vis && (it % nvis == 0)
+            pcur_inner .= Array(pcur)[2:end-1,2:end-1,2:end-1]; gather!(pcur_inner, pcur_global)
+        end
         if me == 0 && do_vis && (it % nvis == 0)
             # take index for slice in middle
-            slice_index = div(nz, 2, RoundUp)
+            slice_index = div(nz_g()-2, 2, RoundUp)
             # get velocity slice and pressure slice
-            vel_slice = copy(vel[:,:,slice_index])
-            p_slice = copy(Array(pcur[:,:,slice_index]))
+            vel_slice = vel_global[:,:,slice_index]
+            p_slice = pcur_global[:,:,slice_index]
             # velocity model heatmap
             velview = (((vel_slice .- minimum(vel_slice)) ./ (maximum(vel_slice) - minimum(vel_slice)))) .* (plims[2] - plims[1]) .+ plims[1]
-            heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal)
+            heatmap(dx:dx:lx-dx, dy:dy:ly-dy, velview'; c=:grayC, aspect_ratio=:equal)
             # pressure heatmap
-            pview = Array(p_slice) .* 1e3
+            pview = p_slice .* 1e3
             maxabsp = @sprintf "%e" maximum(abs.(pview))
             @show maxabsp
             pview[(pview .> plims[1] * threshold) .& (pview .< plims[2] * threshold)] .= NaN
-            heatmap!(0:dx:lx, 0:dy:ly, pview';
-                  xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
+            heatmap!(dx:dx:lx-dx, dy:dy:ly-dy, pview';
+                  xlims=(dx,lx-dx), ylims=(dy,ly-dy), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx", ylabel="ly", clabel="pressure", c=:diverging_bwr_20_95_c54_n256,
                   title="3D Acoustic CPML (nz/2 slice)\n(halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\n max abs pressure = $(maxabsp)"
             )
             # sources positions
             # filter out sources not on the slice
-            filtered_possrcs = possrcs[(possrcs[:,3] .== slice_index),:]
+            filtered_possrcs = possrcs[(possrcs[:,3] .== slice_index + 1),:]
             scatter!((filtered_possrcs[:,1].-1) .* dx, (filtered_possrcs[:,2].-1) .* dy; markershape=:star, markersize=5, color=:red, label="sources in slice")
             # CPML boundaries
             if freetop
@@ -470,7 +491,7 @@ end
         end
     end
     # save visualization
-    if do_vis
+    if me == 0 && do_vis
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
     end
 
