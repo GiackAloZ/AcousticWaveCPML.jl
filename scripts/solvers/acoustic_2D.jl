@@ -257,6 +257,7 @@ end
 
         # visualization
         if do_vis && (it % nvis == 0)
+            @show it
             # velocity model heatmap
             velview = (((copy(vel) .- minimum(vel)) ./ (maximum(vel) - minimum(vel)))) .* (plims[2] - plims[1]) .+ plims[1]
             heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal)
