@@ -385,7 +385,7 @@ end
     # effective memory throughput [GB/s]
     T_eff = A_eff / t_it
 
-    if me == 0 @printf("size = %dx%d, total time = %1.3e sec, time per it = %1.3e sec, Teff = %1.3f GB/s, local memory = %1.3f GB, global memory = %1.3f GB\n", nx, ny, t_toc, t_it, T_eff, local_alloc_mem, global_alloc_mem) end
+    if me == 0 @printf("size = %dx%d, total time = %1.8e sec, time per it = %1.8e sec, Teff = %1.3f GB/s, local memory = %1.3f GB, global memory = %1.3f GB\n", nx, ny, t_toc, t_it, T_eff, local_alloc_mem, global_alloc_mem) end
 
     # save visualization
     if me == 0 && do_vis
