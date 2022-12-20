@@ -375,7 +375,7 @@ end
     # time loop
     for it=1:nt
         # skip first 20 iterations
-        if (it==20) t_tic = tic(); niter = 0 end
+        if (it==200) t_tic = tic(); niter = 0 end
         pold, pcur, pnew = kernel!(
             pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
             halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r, ψ_z_l, ψ_z_r, ξ_z_l, ξ_z_r,

@@ -210,7 +210,7 @@ end
 )
     # Initialize global grid
     me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, 1; init_MPI=init_MPI)
-    b_width = (8, 8)                    # hide communication parameters
+    b_width = (2, 2)                    # hide communication parameters
     # Physics
     f0 = 8.0                            # dominating frequency [Hz]
     t0 = 1.2 / f0                       # activation time [s]
@@ -376,11 +376,11 @@ end
     global_alloc_mem = nprocs * local_alloc_mem
     # effective memory access [GB]
     A_eff = (
-    (halo+1)*gny*2*(2 + 1) +         # update_ψ_x!
-    (halo+1)*gnx*2*(2 + 1) +         # update_ψ_y!
-    (halo+1)*gny*2*(1 + 1) +         # update ξ_x in update_p!
-    (halo+1)*gnx*2*(1 + 1) +         # update ξ_y in update_p!
-    4*nx*ny                          # update_p! (inner points)
+        (halo+1)*gny*2*(2 + 1) +         # update_ψ_x!
+        (halo+1)*gnx*2*(2 + 1) +         # update_ψ_y!
+        (halo+1)*gny*2*(1 + 1) +         # update ξ_x in update_p!
+        (halo+1)*gnx*2*(1 + 1) +         # update ξ_y in update_p!
+        4*gnx*gny                          # update_p! (inner points)
     ) * sizeof(Float64) / 1e9
     # effective memory throughput [GB/s]
     T_eff = A_eff / t_it
