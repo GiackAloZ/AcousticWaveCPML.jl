@@ -28,3 +28,6 @@ Manifest.toml
 
 # Ignore HDF5 files
 *.h5
+
+# Mac OS
+.DS_Store
