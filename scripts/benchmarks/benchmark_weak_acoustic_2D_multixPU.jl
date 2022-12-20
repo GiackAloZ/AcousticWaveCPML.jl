@@ -1,5 +1,3 @@
-# to be run with only 1 MPI process
-
 include("../solvers/acoustic_2D_multixPU.jl")
 
 MPI.Init()
