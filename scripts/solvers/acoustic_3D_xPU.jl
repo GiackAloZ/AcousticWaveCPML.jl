@@ -323,6 +323,7 @@ end
     if do_vis || do_save
         mkpath(DOCS_FLD)
         if do_save
+            rm(TMP_FLD, recursive=true, force=true)
             mkpath(TMP_FLD)
         end
     end
@@ -355,12 +356,12 @@ end
             # pressure heatmap
             pview = Array(p_slice) .* 1e3
             maxabsp = @sprintf "%e" maximum(abs.(pview))
-            @show maxabsp
+            @show it, maxabsp
             pview[(pview .> plims[1] * threshold) .& (pview .< plims[2] * threshold)] .= NaN
             heatmap!(0:dx:lx, 0:dy:ly, pview';
                   xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx", ylabel="ly", clabel="pressure", c=:diverging_bwr_20_95_c54_n256,
-                  title="3D Acoustic CPML (nz/2 slice)\n(halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\n max abs pressure = $(maxabsp)"
+                  title="3D xPU Acoustic CPML (nz/2 slice)\n(nx=$(nx), ny=$(ny), nz=$(nz), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), maxabsp=$(maxabsp)"
             )
             # sources positions
             # filter out sources not on the slice
@@ -392,7 +393,9 @@ end
             # save CPML halo size
             h5write(joinpath(TMP_FLD, "$(save_name)_it$(it).h5"), "halo", halo)
             # save pressure
-            h5write(joinpath(TMP_FLD, "$(save_name)_it$(it).h5"), "pcur", Array(pcur))
+            h5write(joinpath(TMP_FLD, "$(save_name)_it$(it).h5"), "pcur", pcur)
+            # save sources positions
+            h5write(joinpath(TMP_FLD, "$(save_name)_it$(it).h5"), "possrcs", possrcs)
         end
     end
     # save visualization
