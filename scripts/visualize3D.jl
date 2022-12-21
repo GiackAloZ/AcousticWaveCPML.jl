@@ -14,7 +14,7 @@ function load_frame(file_path, it)
 end
 
 
-function visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,3))
+function visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,3), fps=20)
     file_path = joinpath(dirname(@__DIR__), "docs", "tmp", file_name)
     lx, ly, lz = h5read("$(file_path)_it$(it).h5", "lx"), h5read("$(file_path)_it$(it).h5", "ly"), h5read("$(file_path)_it$(it).h5", "lz")
     halo = h5read("$(file_path)_it$(it).h5", "halo")
@@ -55,7 +55,7 @@ function visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,
     end
 
     anim = Animation(joinpath(dirname(@__DIR__),"docs","tmp"), frame_names)
-    gif(anim, joinpath(dirname(@__DIR__), "docs", "$(file_name).gif"))
+    gif(anim, joinpath(dirname(@__DIR__), "docs", "$(file_name).gif"); fps=fps)
 
     return nothing
 end
