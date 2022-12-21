@@ -1,4 +1,5 @@
 include("solvers/acoustic_2D_xPU.jl")
+include("models/rescale_model.jl")
 
 function run_simple()
     # simple constant velocity model
@@ -52,11 +53,11 @@ end
 
 function run_complex()
     # complex velocity model (x10 resolution)
-    nx, ny, nz = 70*10, 143*10, 81*10
+    nx, ny, nz = 143*10, 81*10, 70
     lx = (nx-1) * 10.0
     ly = (ny-1) * 10.0
     nt = 8000
-    vel = permutedims(rescalemod(nx, ny, nz, "cubic"), [2, 3, 1])[:,:,div(nz,2)]
+    vel = permutedims(rescalemod(nz, nx, ny, "cubic"), [2, 3, 1])[:,:,div(nz,2)]
 
     # 6 equidistant sources on top
     possrcs = zeros(Int,6,2)
@@ -69,8 +70,8 @@ function run_complex()
 
     # run simulation
     acoustic2D_xPU(lx, ly, nt, vel, possrcs;
-                   halo=20, rcoef=0.0001, do_vis=true,
-                   gif_name="acoustic2D_xPU_complex_halo20", freetop=true, threshold=0.001)
+                   halo=20, rcoef=0.0001, do_vis=true, plims=(-1,1), nvis=20,
+                   gif_name="acoustic2D_xPU_complex_halo20", freetop=true, threshold=0.05)
 
 end
 

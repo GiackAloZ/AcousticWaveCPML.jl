@@ -12,7 +12,7 @@ nx, ny and nz are the new sizes along the three axes.
 Interpolation is done with BSplines, "kind" determines the order.
 """
 function rescalemod(nx,ny,nz,kind="nearest",
-                    flnamedset=[joinpath(@__DIR__, "foldsfaultmod3D.h5"),"foldsfaultmod"])
+                    flnamedset=[joinpath(@__DIR__, "foldsfaultmod3D.h5"),"foldsfaultmod"], func=false)
   
     res = h5read(flnamedset[1],flnamedset[2])
 
@@ -37,6 +37,10 @@ function rescalemod(nx,ny,nz,kind="nearest",
     elseif kind=="cubic" 
         ## cubic
         itp = interpolate(res,BSpline(Cubic(Natural(OnCell()))))
+    end
+
+    if func
+        return itp
     end
 
     res_itp = itp(x,y,z)    
