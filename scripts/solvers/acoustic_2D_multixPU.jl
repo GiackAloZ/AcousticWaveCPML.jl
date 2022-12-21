@@ -300,8 +300,10 @@ end
         gather!(vel_inner, vel_global)
     end
 
-    # disable garbage collection
-    GC.gc(); GC.enable(false)
+    if !do_vis
+        # disable garbage collection
+        GC.gc(); GC.enable(false)
+    end
     # time for benchmark
     t_tic = 0.0; niter = 0
     # time loop
@@ -360,8 +362,10 @@ end
             frame(anim)
         end
     end
-    # reenable garbage collection
-    GC.enable(true)
+    if !do_vis
+        # reenable garbage collection
+        GC.enable(true)
+    end
 
     # compute performance
     t_toc = toc()

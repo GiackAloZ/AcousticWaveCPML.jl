@@ -368,13 +368,15 @@ end
         gather!(vel_inner, vel_global)
     end
 
-    # disable garbage collection
-    GC.gc(); GC.enable(false)
+    if !do_vis && !do_save
+        # disable garbage collection
+        GC.gc(); GC.enable(false)
+    end
     # time for benchmark
     t_tic = 0.0; niter = 0
     # time loop
     for it=1:nt
-        # skip first 20 iterations
+        # skip first 19 iterations
         if (it==20) t_tic = tic(); niter = 0 end
         pold, pcur, pnew = kernel!(
             pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
@@ -448,8 +450,10 @@ end
             h5write(joinpath(TMP_FLD, "$(save_name)_it$(it)_proc$(me).h5"), "pcur", Array(pcur))
         end
     end
-    # reenable garbage collection
-    GC.enable(true)
+    if !do_vis && !do_save
+        # reenable garbage collection
+        GC.enable(true)
+    end
 
     # compute performance
     t_toc = toc()

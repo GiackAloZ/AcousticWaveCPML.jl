@@ -16,7 +16,7 @@ ENV["GKSwstype"]="nul"
 
 using ParallelStencil
 using ParallelStencil.FiniteDifferences3D
-const USE_GPU = false
+const USE_GPU = false 
 @static if USE_GPU
     using CUDA
     @init_parallel_stencil(CUDA, Float64, 3)
@@ -327,9 +327,18 @@ end
         end
     end
 
+    if !do_vis && !do_save
+        # disable garbage collection
+        GC.gc(); GC.enable(false)
+    end
+    # time for benchmark
+    t_tic = 0.0; niter = 0
     # time loop
     anim = Animation()
     for it=1:nt
+        # skip first 19 iterations
+        if (it==20) t_tic = Base.time(); niter = 0 end
+
         pold, pcur, pnew = kernel!(
             pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
             halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r, ψ_z_l, ψ_z_r, ξ_z_l, ξ_z_r,
@@ -341,6 +350,8 @@ end
             a_z_l, a_z_r, b_K_z_l, b_K_z_r,
             possrcs_a, dt2srctf, it
         )
+
+        niter += 1
 
         # visualization
         if do_vis && (it % nvis == 0)
@@ -395,6 +406,37 @@ end
             h5write(joinpath(TMP_FLD, "$(save_name)_it$(it).h5"), "pcur", Array(pcur))
         end
     end
+    if !do_vis && !do_save
+        # reenable garbage collection
+        GC.enable(true)
+    end
+
+    # compute performance
+    t_toc = Base.time() - t_tic
+    t_it  = t_toc / niter                  # Execution time per iteration [s]
+    # allocated memory [GB]
+    local_alloc_mem = (
+        3*(nx*ny*nz) +
+        2*((halo+1)*ny*nz) + 2*(halo*ny*nz) +
+        2*((halo+1)*nx*nz) + 2*(halo*nx*nz) +
+        2*((halo+1)*nx*ny) + 2*(halo*nx*ny) +
+        4*3*(halo+1) + 4*3*halo
+    ) * sizeof(Float64) / 1e9
+    # effective memory access [GB]
+    A_eff = (
+        (halo+1)*ny*nz*2*(2 + 1) +         # update_ψ_x!
+        (halo+1)*nx*nz*2*(2 + 1) +         # update_ψ_y!
+        (halo+1)*nx*ny*2*(2 + 1) +         # update_ψ_z!
+        (halo+1)*ny*nz*2*(1 + 1) +         # update ξ_x in update_p!
+        (halo+1)*nx*nz*2*(1 + 1) +         # update ξ_y in update_p!
+        (halo+1)*nx*ny*2*(1 + 1) +         # update ξ_z in update_p!
+        4*nx*ny*nz                        # update_p! (inner points)
+    ) * sizeof(Float64) / 1e9
+    # effective memory throughput [GB/s]
+    T_eff = A_eff / t_it
+
+    @printf("size = %dx%dx%d, total time = %1.8e sec, time per it = %1.8e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, nz, t_toc, t_it, T_eff, local_alloc_mem)
+    
     # save visualization
     if do_vis
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
