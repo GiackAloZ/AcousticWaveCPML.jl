@@ -80,18 +80,16 @@ function visualise_3D(file_name; it=1000, procs=1, frames=[], threshold=0.001, p
                              xlabel="lx",ylabel="lz",zlabel="ly")
             surf_T   = GLMakie.contour!(ax,xc,zc,yc,pcur;
                 alpha=0.01,
-                colormap=:diverging_bwr_20_95_c54_n256,
-                # colorrange=(0.01, log10(plims[2]))
+                colormap=:diverging_bwr_20_95_c54_n256
             )
             GLMakie.zlims!(-ly,0)
 
-            GLMakie.scatter!(ax,[lx/3, lx/3, 2lx/3, 2lx/3],[lz/3, 2lz/3, lz/3, 2lz/3],[3, 3, 3, 3], markersize=20, marker=:star4, color="red", label="sources")
+            # GLMakie.scatter!(ax,[lx/3, lx/3, 2lx/3, 2lx/3],[lz/3, 2lz/3, lz/3, 2lz/3],[3, 3, 3, 3], markersize=20, marker=:star4, color="red", label="sources")
+            
             push!(frame_names, "$(file_name)_it$(frame).png")
-            save(joinpath(dirname(@__DIR__),"docs","tmp2","$(file_name)_it$(frame).png"),fig)
+            save(joinpath(dirname(@__DIR__),"docs","tmp","$(file_name)_it$(frame).png"),fig)
         end
     end
 
     return nothing
 end
-
-visualise_3D("acoustic3Dmulti_four_halo20"; it=400, procs=4, frames=40:20:1000)
