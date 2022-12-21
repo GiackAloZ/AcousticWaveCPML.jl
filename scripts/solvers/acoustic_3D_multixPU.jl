@@ -448,6 +448,8 @@ end
             h5write(joinpath(TMP_FLD, "$(save_name)_it$(it)_proc$(me).h5"), "halo", halo)
             # save pressure
             h5write(joinpath(TMP_FLD, "$(save_name)_it$(it)_proc$(me).h5"), "pcur", Array(pcur))
+            # save sources positions
+            h5write(joinpath(TMP_FLD, "$(save_name)_it$(it)_proc$(me).h5"), "possrcs", possrcs)
         end
     end
     if !do_vis && !do_save

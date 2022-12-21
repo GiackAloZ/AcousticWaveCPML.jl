@@ -300,12 +300,12 @@ end
             # pressure heatmap
             pview = Array(pcur) .* 1e3
             maxabsp = @sprintf "%e" maximum(abs.(pview))
-            @show maxabsp
+            @show it, maxabsp
             pview[(pview .> plims[1] * threshold) .& (pview .< plims[2] * threshold)] .= NaN
             heatmap!(0:dx:lx, 0:dy:ly, pview';
                   xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx", ylabel="ly", clabel="pressure", c=:diverging_bwr_20_95_c54_n256,
-                  title="2D Acoustic CPML\n(halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\n max abs pressure = $(maxabsp)"
+                  title="2D xPU Acoustic CPML\n(nx=$(nx), ny=$(ny), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), maxabsp=$(maxabsp)"
             )
             # sources positions
             scatter!((possrcs[:,1].-1) .* dx, (possrcs[:,2].-1) .* dy; markershape=:star, markersize=5, color=:red, label="sources")
@@ -359,5 +359,5 @@ end
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
     end
 
-    return nothing
+    return pcur
 end
