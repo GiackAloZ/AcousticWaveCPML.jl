@@ -295,5 +295,5 @@ end
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
     end
 
-    return nothing
+    return pcur
 end
