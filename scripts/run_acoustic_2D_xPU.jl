@@ -70,7 +70,7 @@ function run_complex()
 
     # run simulation
     acoustic2D_xPU(lx, ly, nt, vel, possrcs;
-                   halo=20, rcoef=0.0001, do_vis=true, plims=(-1,1), nvis=20,
+                   halo=20, rcoef=0.0001, do_vis=true, plims=[-1,1], nvis=20,
                    gif_name="acoustic2D_xPU_complex_halo20", freetop=true, threshold=0.05)
 
 end

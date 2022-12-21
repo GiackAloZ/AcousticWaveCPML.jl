@@ -26,8 +26,8 @@ Manifest.toml
 # Visual Studio settings
 .vscode
 
-# Ignore HDF5 files
-*.h5
-
 # Mac OS
 .DS_Store
+
+# tmp folder
+docs/tmp/**
