@@ -415,7 +415,7 @@ end
             heatmap!(dx:dx:lx-dx, dy:dy:ly-dy, pview';
                   xlims=(0,lx), ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx", ylabel="ly", clabel="pressure", c=:diverging_bwr_20_95_c54_n256,
-                  title="3D Acoustic CPML (nz/2 slice)\n(halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\n max abs pressure = $(maxabsp)"
+                  title="3D multi-xPU Acoustic CPML (nz/2 slice)\n(nx=$(nx), ny=$(ny), nz=$(nz), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), maxabsp=$(maxabsp)"
             )
             # sources positions
             # filter out sources not on the slice

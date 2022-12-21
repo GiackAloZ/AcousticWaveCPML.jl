@@ -11,8 +11,10 @@ nx, ny and nz are the new sizes along the three axes.
 
 Interpolation is done with BSplines, "kind" determines the order.
 """
-function rescalemod(nx,ny,nz,kind="nearest",
-                    flnamedset=[joinpath(@__DIR__, "foldsfaultmod3D.h5"),"foldsfaultmod"], func=false)
+function rescalemod(nx,ny,nz;
+                    kind="nearest",
+                    flnamedset=[joinpath(@__DIR__, "foldsfaultmod3D.h5"),"foldsfaultmod"],
+                    func=false)
   
     res = h5read(flnamedset[1],flnamedset[2])
 
@@ -47,8 +49,3 @@ function rescalemod(nx,ny,nz,kind="nearest",
 
     return res_itp
 end
-
-# using Plots
-# vel = rescalemod(70,143*10,81*10)[35,:,:]
-# heatmap(vel')
-# savefig("tmp.png")
