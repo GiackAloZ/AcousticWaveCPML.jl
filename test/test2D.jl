@@ -29,9 +29,13 @@ REF_FLD = joinpath(@__DIR__, "references")
     
     @test ψ_x_l[1,:] == [0.5, fill(0.55, ny-2)..., 0.5]
     @test ψ_x_l[2:end,:] == 0.5 .* ones(halo, ny)
-
     @test ψ_x_r[1:end-1,:] == 2.0 .* ones(halo, ny)
     @test ψ_x_r[end,:] == [2.0, fill(1.8, ny-2)..., 2.0]
+
+    @test ψ_y_l[:,1] == [0.5, fill(0.55, nx-2)..., 0.5]
+    @test ψ_y_l[:,2:end] == 0.5 .* ones(nx, halo)
+    @test ψ_y_r[:,1:end-1] == 2.0 .* ones(nx, halo)
+    @test ψ_y_r[:,end] == [2.0, fill(1.8, nx-2)..., 2.0]
 end
 
 @testset "Reference test constant velocity" begin
