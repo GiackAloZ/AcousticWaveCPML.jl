@@ -11,7 +11,7 @@ REF_FLD = joinpath(@__DIR__, "references")
     nx = ny = nz = 61
     lx = ly = lz = (nx-1) * 10.0
     vel = 2000.0 .* ones(Float64, nx, ny, nz)
-    nt = 4000
+    nt = 1000
     # one source in the center
     possrcs = zeros(Int,1,3)
     possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
@@ -37,7 +37,7 @@ end
     # constant after some depth
     bigv = vel[1,ny-40,1]
     vel[:,ny-40:end,:] .= bigv
-    nt = 4000
+    nt = 1000
     # one source in the center
     possrcs = zeros(Int,1,3)
     possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
