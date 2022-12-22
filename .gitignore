@@ -30,4 +30,4 @@ Manifest.toml
 .DS_Store
 
 # tmp folder
-docs/tmp/**
+simulations/tmp/**

@@ -8,7 +8,7 @@ default(size=(1000, 600), framestyle=:box,grid=false,margin=20pt)
 include("../utils.jl")
 
 # folders for results
-DOCS_FLD = joinpath(dirname(dirname(@__DIR__)), "docs")
+DOCS_FLD = joinpath(dirname(dirname(@__DIR__)), "simulations")
 TMP_FLD = joinpath(DOCS_FLD, "tmp")
 
 # Disable interactive visualization

@@ -21,7 +21,7 @@ include("utils.jl")
 function plot_performance(result_files, out_file, title)
     results = []
     labels = []
-    for f in result_files
+    for (f, dim) in result_files
         # extract results
         res = readlines(f)
         sizes = []
@@ -68,8 +68,10 @@ function plot_performance(result_files, out_file, title)
 end
 
 plot_performance([
-    joinpath(@__DIR__, "results", "acoustic_2D_CPU.txt"),
-    joinpath(@__DIR__, "results", "acoustic_2D_GPU.txt")],
-    joinpath(@__DIR__, "results", "acoustic_2D_perf.png"),
-    "Effective performance of acoustic 2D CPML on CPU and GPU"
+    (joinpath(@__DIR__, "results", "acoustic_2D_CPU.txt"), 2),
+    (joinpath(@__DIR__, "results", "acoustic_2D_GPU.txt"), 2),
+    (joinpath(@__DIR__, "results", "acoustic_3D_CPU.txt"), 3),
+    (joinpath(@__DIR__, "results", "acoustic_3D_GPU.txt"), 3)],
+    joinpath(@__DIR__, "results", "performance_2D3D_perf.png"),
+    "Effective performance of acoustic 2D/3D CPML on CPU and GPU"
 )

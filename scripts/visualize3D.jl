@@ -13,9 +13,8 @@ function load_frame(file_path, it)
     return nx, ny, nz, pcur
 end
 
-
 function visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,3), fps=20)
-    file_path = joinpath(dirname(@__DIR__), "docs", "tmp", file_name)
+    file_path = joinpath(dirname(@__DIR__), "simulations", "tmp", file_name)
     lx, ly, lz = h5read("$(file_path)_it$(it).h5", "lx"), h5read("$(file_path)_it$(it).h5", "ly"), h5read("$(file_path)_it$(it).h5", "lz")
     halo = h5read("$(file_path)_it$(it).h5", "halo")
     possrcs = h5read("$(file_path)_it$(it).h5", "possrcs")
@@ -37,7 +36,7 @@ function visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,
 
         xc,yc,zc = LinRange(0,lx,nx),-reverse(LinRange(0,ly,ny)),LinRange(0,lz,nz)
         fig      = GLMakie.Figure(resolution=(1600,1000),fontsize=24,figure_padding=100)
-        ax       = GLMakie.Axis3(fig[1,1]; aspect=(1,1,1),
+        ax       = GLMakie.Axis3(fig[1,1]; aspect=:data, viewmode=:fit,
                          title="3D xPU Acoustic CPML\n(nx=$(nx), ny=$(ny), nz=$(nz), halo = $(halo), threshold=$(round(threshold * 100, digits=2))%)",
                          xlabel="lx",ylabel="lz",zlabel="ly")
         surf_T   = GLMakie.contour!(ax,xc,zc,yc,pcur;
@@ -50,12 +49,12 @@ function visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,
         GLMakie.scatter!(ax, possrcs[:,1] .* dx, possrcs[:,3] .* dz, .-possrcs[:,2] .* dy, markersize=20, marker=:star4, color="red", label="sources")
         
         push!(frame_names, @sprintf("%06d.png", frameid))
-        GLMakie.save(joinpath(dirname(@__DIR__),"docs","tmp",frame_names[frameid]),fig)
+        GLMakie.save(joinpath(dirname(@__DIR__),"simulations","tmp",frame_names[frameid]),fig)
         frameid += 1
     end
 
-    anim = Animation(joinpath(dirname(@__DIR__),"docs","tmp"), frame_names)
-    gif(anim, joinpath(dirname(@__DIR__), "docs", "$(file_name).gif"); fps=fps)
+    anim = Animation(joinpath(dirname(@__DIR__),"simulations","tmp"), frame_names)
+    gif(anim, joinpath(dirname(@__DIR__), "simulations", "$(file_name).gif"); fps=fps)
 
     return nothing
 end
