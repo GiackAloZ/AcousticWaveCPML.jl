@@ -19,7 +19,7 @@ default(
 include("utils.jl")
 
 function plot_weak_scaling(out_file, title)
-    baseline_2D_single_xPU = 1.46489830e+01
+    baseline_2D_single_xPU = 1.43448780e+01
     baseline_3D_single_xPU = 3.00937692e+00
 
     nprocs_2D = [1, 4, 9, 16, 25, 36]
