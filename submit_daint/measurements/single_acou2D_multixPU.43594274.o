@@ -1,0 +1,43 @@
+Global grid: 33x33x1 (nprocs: 1, dims: 1x1x1)
+size = 33x33, total time = 3.879e+01 sec, time per it = 3.887e-04 sec, Teff = 0.375 GB/s, local memory = 0.000 GB, global memory = 0.000 GB
+Global grid: 65x65x1 (nprocs: 1, dims: 1x1x1)
+size = 65x65, total time = 3.879e+01 sec, time per it = 3.887e-04 sec, Teff = 0.910 GB/s, local memory = 0.000 GB, global memory = 0.000 GB
+Global grid: 129x129x1 (nprocs: 1, dims: 1x1x1)
+size = 129x129, total time = 3.872e+01 sec, time per it = 3.880e-04 sec, Teff = 2.489 GB/s, local memory = 0.001 GB, global memory = 0.001 GB
+Global grid: 257x257x1 (nprocs: 1, dims: 1x1x1)
+size = 257x257, total time = 3.872e+01 sec, time per it = 3.880e-04 sec, Teff = 7.673 GB/s, local memory = 0.002 GB, global memory = 0.002 GB
+Global grid: 513x513x1 (nprocs: 1, dims: 1x1x1)
+size = 513x513, total time = 4.005e+01 sec, time per it = 4.013e-04 sec, Teff = 25.283 GB/s, local memory = 0.007 GB, global memory = 0.007 GB
+Global grid: 1025x1025x1 (nprocs: 1, dims: 1x1x1)
+size = 1025x1025, total time = 4.493e+00 sec, time per it = 4.585e-04 sec, Teff = 80.835 GB/s, local memory = 0.027 GB, global memory = 0.027 GB
+Global grid: 2049x2049x1 (nprocs: 1, dims: 1x1x1)
+size = 2049x2049, total time = 7.506e+00 sec, time per it = 7.659e-04 sec, Teff = 184.392 GB/s, local memory = 0.103 GB, global memory = 0.103 GB
+Global grid: 4097x4097x1 (nprocs: 1, dims: 1x1x1)
+size = 4097x4097, total time = 1.394e+00 sec, time per it = 1.743e-03 sec, Teff = 316.055 GB/s, local memory = 0.408 GB, global memory = 0.408 GB
+Global grid: 8193x8193x1 (nprocs: 1, dims: 1x1x1)
+size = 8193x8193, total time = 3.981e+00 sec, time per it = 4.976e-03 sec, Teff = 437.202 GB/s, local memory = 1.622 GB, global memory = 1.622 GB
+Global grid: 16385x16385x1 (nprocs: 1, dims: 1x1x1)
+size = 16385x16385, total time = 1.444e+01 sec, time per it = 1.805e-02 sec, Teff = 479.053 GB/s, local memory = 6.465 GB, global memory = 6.465 GB
+
+
+Batch Job Summary Report (version 21.01.1) for Job "acou2D_multixPU" (43594274) on daint
+
+Job information (1/3)
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed Time limit
+------------------- ------------------- ------------------- ------------------- ---------- ----------
+2022-12-18T13:07:51 2022-12-18T13:07:51 2022-12-18T13:09:36 2022-12-18T13:15:35   00:05:59   00:20:00
+-----------------------------------------------------------------------------------------------------
+
+Job information (2/3)
+-------------------------------------------------------------
+    Username      Account    Partition   NNodes        Energy
+------------ ------------ ------------ -------- -------------
+    class205      class04       normal        1     39.064 kJ
+
+Job information (3/3) - GPU utilization data
+----------------------------------------------------
+   Node name       Usage      Max mem Execution time
+------------ ----------- ------------ --------------
+    nid01932        16 %    10585 MiB       00:05:23
+

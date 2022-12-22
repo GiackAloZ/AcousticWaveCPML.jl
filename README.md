@@ -4,7 +4,7 @@
 
 A Julia package for solving acoustic wave propagation in 2D and 3D on multi-xPUs using CPML boundary conditions.
 
-This package will also provide functionalities to compute gradients with respect to velocities using the adjoint method and residuals from available data. Checkpointing features also allow to compute gradients without running out of memory.
+_WIP: this package will also provide functionalities to compute gradients with respect to velocities using the adjoint method and residuals from available data. Checkpointing features will also allow to compute gradients without running out of memory._
 
 ## Introduction and motivation
 
@@ -30,24 +30,20 @@ Julia natively supports several parallelization paradigms (such as shared memory
 computing) and recently developed packages like ParallelStencil.jl, which make for a simple, yet powerful, way
 to implement scalable, efficient, maintainable and hardware-agnostic parallel algorithms.
 
-We have implemented a time-domain finite-difference solvers for acoustic wave propagation
-with C-PML boundary conditions on GPUs using Julia. Extensive benchmarks and performance evaluations of the developed parallel code have been conducted to assess the gain in performance and the possbility to scale on multi-GPUs.
+We have implemented some time-domain finite-difference solvers for acoustic wave propagation
+with CPML boundary conditions on GPUs using Julia. Extensive benchmarks and performance evaluations of the developed parallel code have been conducted to assess the gain in performance and the possbility to scale on multi-GPUs.
 
 ## Physical model
 
-TODO
+Insert equations and CPML references.
 
 ## Numerical methods and implementation
 
-TODO
-
-## Model setups
-
-TODO
+Talk about the FD scheme, the allocation of different CPML coefficients and arrays.
 
 ## Results
 
-TODO
+Brief introduction to results, explain the setups. How the data is visualized and how it could be improved.
 
 ### 1D CPML
 
@@ -55,6 +51,22 @@ TODO
 
 ### 3D CPML
 
+## Performance evaluation
+
+Talk about the setup for benchmarks (Piz Daint, my laptop etc...). Mention peak performances and other relevant hardware/software information.
+
+### Performance of 2D and 3D kernels
+
+Show performance plot.
+
+### Weak scaling of 2D and 3D multi-xPU kernels
+
+Show weak scaling plot.
+
 ## Conclusions
 
-TODO
+Talk about what has been achieved and what has been planned for the future.
+
+## Reference
+
+Add references (CPML, complex model, etc...)

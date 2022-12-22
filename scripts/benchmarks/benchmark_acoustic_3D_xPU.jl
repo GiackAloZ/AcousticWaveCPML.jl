@@ -13,7 +13,7 @@ end
 # benchmark full run
 t_tic = Base.time()
 nx = ny = nz = 513
-nt = 1000
+nt = 200
 lx = ly = lz = (nx - 1) * 10.0
 vel = 2000 .* ones(nx, ny, nz)
 possrcs = zeros(Int,1,3)
