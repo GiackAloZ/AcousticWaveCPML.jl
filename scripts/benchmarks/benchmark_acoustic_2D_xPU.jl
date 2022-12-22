@@ -1,7 +1,7 @@
 include("../solvers/acoustic_2D_xPU.jl")
 
 # benchmark single runs
-nx = ny = 2 .^ (5:12) .+ 1
+nx = ny = 2 .^ (5:14) .+ 1
 lx = ly = (nx .- 1) .* 10.0
 for i = eachindex(nx)
     vel = 2000 .* ones(nx[i], ny[i])
@@ -12,7 +12,7 @@ end
 
 # benchmark full run
 t_tic = Base.time()
-nx = ny = 129
+nx = ny = 2^14 + 1
 nt = 1000
 lx = ly = (nx - 1) * 10.0
 vel = 2000 .* ones(nx, ny)
