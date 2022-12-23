@@ -4,27 +4,38 @@ using HDF5
 
 GLMakie.activate!()
 
+"""
+    load_frame(file_path, it)
+
+Load the frame of iteration `it` from `file_path`
+"""
 function load_frame(file_path, it)
+    lx, ly, lz = h5read("$(file_path)_it$(it).h5", "lx"), h5read("$(file_path)_it$(it).h5", "ly"), h5read("$(file_path)_it$(it).h5", "lz")
+    halo = h5read("$(file_path)_it$(it).h5", "halo")
+    possrcs = h5read("$(file_path)_it$(it).h5", "possrcs")
     pcur = h5read("$(file_path)_it$(it).h5", "pcur")
     pcur .*= 1000
 
     nx, ny, nz = size(pcur)
 
-    return nx, ny, nz, pcur
+    return lx, ly, lz, halo, possrcs, nx, ny, nz, pcur
 end
 
-function visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,3), fps=20)
-    file_path = joinpath(dirname(@__DIR__), "simulations", "tmp", file_name)
-    lx, ly, lz = h5read("$(file_path)_it$(it).h5", "lx"), h5read("$(file_path)_it$(it).h5", "ly"), h5read("$(file_path)_it$(it).h5", "lz")
-    halo = h5read("$(file_path)_it$(it).h5", "halo")
-    possrcs = h5read("$(file_path)_it$(it).h5", "possrcs")
+"""
+    visualise_3D(file_name; it=1000, frames=[], threshold=0.001, plims=(-3,3), fps=20)
 
-    @show lx, ly, lz, halo
+Visualise 3D animation from tmp folder in simulations with prefix `file_name`, frames to pick for animation `frames`,
+limits of pressure for visualisation `plims`, percentage of `plims` pressure values to cut `threshold`, gif fps `fps`.
+
+Save the resulting animation in the simulations folder with name `file_name.gif`.
+"""
+function visualise_3D(file_name; frames=[], threshold=0.001, plims=(-3,3), fps=20)
+    file_path = joinpath(dirname(@__DIR__), "simulations", "tmp", file_name)
 
     frame_names = []
     frameid = 1
     for frame in frames
-        nx, ny, nz, pcur = load_frame(file_path, frame)
+        lx, ly, lz, halo, possrcs, nx, ny, nz, pcur = load_frame(file_path, frame)
 
         maxabsp = maximum(abs.(pcur))
         @show maxabsp

@@ -5,9 +5,16 @@ using Printf
 
 GLMakie.activate!()
 
+"Remote storage folder"
 REMOTE_PATH = "daint:~/scratch/AcousticWaveCPML.jl/docs/tmp"
+"Local storage folder"
 LOCAL_PATH = joinpath(dirname(@__DIR__), "simulations", "tmp")
 
+"""
+    download_frame(file_name, it, procs=8)
+
+Download the frame of iteration `it` from the remote with the specific `file_name` for `procs` processors.
+"""
 function download_frame(file_name, it, procs=8)
     mkpath(LOCAL_PATH)
     for p in 0:procs-1
@@ -17,6 +24,11 @@ function download_frame(file_name, it, procs=8)
     end
 end
 
+"""
+    delete_local_frame(file_name, it, procs=8)
+
+Delete the local frame of iteration `it` with the specific `file_name` for `procs` processors.
+"""
 function delete_local_frame(file_name, it, procs=8)
     for p in 0:procs-1
         local_file_path = joinpath(LOCAL_PATH, "$(file_name)_it$(it)_proc$(p).h5")
@@ -24,7 +36,14 @@ function delete_local_frame(file_name, it, procs=8)
     end
 end
 
-function load_frame(file_name, it, procs=8)
+"""
+    load_frame_remote(file_path, it, procs=8)
+
+Load the frame of iteration `it` with name `file_name` from the remote with `procs` processors.
+
+NOTE: currently implemented only for 3D and 8 processors.
+"""
+function load_frame_remote(file_name, it, procs=8)
     # scp from remote
     download_frame(file_name, it)
     # load data
@@ -66,11 +85,19 @@ function load_frame(file_name, it, procs=8)
     return lx, ly, lz, halo, gnx, gny, gnz, pcur,possrcs
 end
 
+"""
+    visualise_3D_multi_remote(file_name; frames=[], threshold=0.0005, plims=(-1,1), fps=20)
+
+Visualise 3D animation from remote folder prefix `file_name`, frames to pick for animation `frames`,
+limits of pressure for visualisation `plims`, percentage of `plims` pressure values to cut `threshold`, gif fps `fps`.
+
+Save the resulting animation in the local simulations folder with name `file_name.gif`.
+"""
 function visualise_3D_multi_remote(file_name; frames=[], threshold=0.0005, plims=(-1,1), fps=20)
     frame_names = []
     frameid = 1
     for frame in frames
-        lx, ly, lz, halo, nx, ny, nz, pcur, possrcs = load_frame(file_name, frame)
+        lx, ly, lz, halo, nx, ny, nz, pcur, possrcs = load_frame_remote(file_name, frame)
 
         maxabsp = maximum(abs.(pcur))
         @show maxabsp

@@ -1,7 +1,20 @@
 using BenchmarkTools, HypothesisTests
 
 """
- Compute d, K and a parameters for CPML
+calc_Kab_CPML(halo::Integer,
+              dt::Float64, npower::Float64, d0::Float64,
+              alpha_max_pml::Float64, K_max_pml::Float64,
+              onwhere::String)
+
+Compute K, a and b parameters for CPML with `halo` layers.
+
+# Arguments
+- `dt`: times step size.
+- `npower`: CPML power coefficient.
+- `d0`: damping factor.
+- `alpha_max_pml`: frequency dependent CPML coefficient.
+- `K_max_pml`: maximum value for K coefficient.
+- `onwhere`: "ongrd" for coefficients in nodal points, "halfgrd" for staggerd coefficients (in between nodal points).
 """
 function calc_Kab_CPML(halo::Integer,
                        dt::Float64, npower::Float64, d0::Float64,
@@ -41,7 +54,9 @@ function calc_Kab_CPML(halo::Integer,
 end
 
 """
- Gaussian source time function
+    gaussource1D( t::Vector{<:Real}, t0::Real, f0::Real )
+
+Gaussian source time function for `t` time array, `t0` activation time, `f0` dominating frequency.
 """
 function gaussource1D( t::Vector{<:Real}, t0::Real, f0::Real )
     # boh = f0 .* (t-t0)
@@ -53,7 +68,9 @@ end
 
 
 """
- Ricker source time function
+    rickersource1D(t::Vector{<:Real}, t0::Real, f0::Real)    
+
+Ricker source time function for `t` time array, `t0` activation time, `f0` dominating frequency.
 """
 function rickersource1D(t::Vector{<:Real}, t0::Real, f0::Real)    
     b = (pi*f0*(t.-t0)).^2
@@ -61,6 +78,14 @@ function rickersource1D(t::Vector{<:Real}, t0::Real, f0::Real)
     return w
 end
 
+"""
+    check_trial(trial::BenchmarkTools.Trial, confidence=0.95, range=0.05)
+
+Check that a `BenchmarkTools.Trial` satisfies the following property:
+- the `confidence*100`% confidence interval lies inside the +-`range*100`% of the median. 
+
+Return true if the property is satisfied, the confidence interval in seconds, the +- range % of median in seconds and the median in seconds.
+"""
 function check_trial(trial::BenchmarkTools.Trial, confidence=0.95, range=0.05)
     data = trial.times
     m = median(trial).time

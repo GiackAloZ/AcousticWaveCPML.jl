@@ -19,7 +19,7 @@ import MPI
 
 using ParallelStencil
 using ParallelStencil.FiniteDifferences3D
-const USE_GPU = true
+const USE_GPU = false
 @static if USE_GPU
     using CUDA
     @init_parallel_stencil(CUDA, Float64, 3)

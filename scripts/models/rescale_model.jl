@@ -5,11 +5,18 @@ using Interpolations
 
 
 """
+    rescalemod(nx,ny,nz;
+               kind="nearest",
+               flnamedset=[joinpath(@__DIR__, "foldsfaultmod3D.h5"), "foldsfaultmod"],
+               func=false)
+
 Rescale/interpolate a model given as a 3D array stored in a HDF5 file.
 
 nx, ny and nz are the new sizes along the three axes.
 
 Interpolation is done with BSplines, "kind" determines the order.
+
+If func is true, then it return a callable "function-like" object instead.
 """
 function rescalemod(nx,ny,nz;
                     kind="nearest",
