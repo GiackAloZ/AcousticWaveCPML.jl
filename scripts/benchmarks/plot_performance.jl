@@ -58,7 +58,7 @@ function plot_performance(result_files, out_file, title)
         plot!(
             r[1], r[2];
             xticks=2 .^ (10:2:28), yticks=(2 .^ (1:1:9), map(string, 2 .^ (1:1:9))),
-            xlim=(2^(9.5), 2^(28.5)), ylim=(1.0,maxylim), xscale=:log2, yscale=:log2, label=lab, legend=:bottomright,
+            xlim=(2^(9), 2^(28.5)), ylim=(1.0,maxylim), xscale=:log2, yscale=:log2, label=lab, legend=:bottomright,
             xlabel="model size (number of grid points)", ylabel="Effective memory throughput [GB/s]", title=title
         )
     end

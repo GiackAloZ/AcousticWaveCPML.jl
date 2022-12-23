@@ -26,7 +26,7 @@ function plot_weak_scaling(out_file, title)
     nprocs_3D = [1, 8, 27, 64]
 
     times_multi2D = [
-        1.49893990e+01,
+        1.43448780e+01,
         1.49460790e+01,
         1.49583530e+01,
         1.49448981e+01,
@@ -34,7 +34,7 @@ function plot_weak_scaling(out_file, title)
         1.49515481e+01
     ]
     times_multi3D = [
-        3.38262796e+00,
+        3.00937692e+00,
         3.02247500e+00,
         3.02497411e+00,
         3.02258301e+00
@@ -45,7 +45,7 @@ function plot_weak_scaling(out_file, title)
     
     plot(
         nprocs_2D, weak_eff_multi2D;
-        xticks=2 .^ (0:8), ylim=(85,100), xscale=:log2, label="acoustic_2D_multixPU", legend=:bottomright,
+        xticks=2 .^ (0:8), ylim=(90,101), xscale=:log2, label="acoustic_2D_multixPU", legend=:bottomright,
         xlabel="number of nodes/GPUs", ylabel="Weak scaling efficiency [%]", title=title
     )
     plot!(

@@ -30,7 +30,7 @@ Julia natively supports several parallelization paradigms (such as shared memory
 computing) and recently developed packages like [ParallelStencil.jl](https://github.com/omlins/ParallelStencil.jl) and [ImplicitGlobalGrid.jl](https://github.com/eth-cscs/ImplicitGlobalGrid.jl), which make for a simple, yet powerful, way to implement scalable, efficient, maintainable and hardware-agnostic parallel algorithms.
 
 We have implemented some time-domain finite-difference solvers for acoustic wave propagation
-with CPML boundary conditions on GPUs using Julia. Extensive benchmarks and performance evaluations of the developed parallel code have been conducted to assess the gain in performance and the possbility to scale on multi-GPUs.
+with CPML boundary conditions on GPUs using Julia. Extensive [benchmarks and performance evaluations](#performance-evaluation) of the developed parallel code have been conducted to assess the gain in performance and the possbility to scale on multi-GPUs.
 
 ## Physical model
 
@@ -170,6 +170,10 @@ We can see that without CPML layers, the wave gets reflected by the boundaries. 
 
 #### Constant velocity model
 
+In this simulation we tested the 2D CPML model by looking at spurious reflection waves coming from the boundaries using different amounts of CPML layers. We use a threshold to cut low pressure values and make the visualization more intuitive.
+
+We have also plotted a quantitative measure of the maximum absolute pressure value in the whole field. This value should decay rapidly as soon as the main wavefront hits the boundary and then continue to decrease.
+
 |                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 5       |
@@ -177,7 +181,11 @@ We can see that without CPML layers, the wave gets reflected by the boundaries. 
 | CPML layers = 10            |  CPML layers = 20       |
 ![1Dcpmlhalo10](./simulations/acoustic2D_center_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_center_halo20.gif)
 
+We can see that, as in the 1D case, adding more layers helps with reducing the amplitude of the reflected waves.
+
 #### Gradient velocity model
+
+In this simulation we wanted to tackle a non-constant velocity model, but still pretty simple. The velocity is shown in the plots as a grayscale gradient in the beckground, with higher values corresponding to darker colors. As usual, we compare different CPML layers amounts. We usa a bigger pressure threshold to cut more low pressure values and only see the "main wavefronts". Here we still should not see any reflections coming from velocity differences, since the gradient is pretty smooth and for those we would need sharper shocks.
 
 |                          |                       |
 :-------------------------:|:-------------------------:
@@ -186,52 +194,88 @@ We can see that without CPML layers, the wave gets reflected by the boundaries. 
 | CPML layers = 10            |  CPML layers = 20       |
 ![1Dcpmlhalo10](./simulations/acoustic2D_gradient_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_gradient_halo20.gif)
 
+In this case we see that with 10 CPML layers we almost completely absorb the main wavefront (can you see a bit of it coming back to the top?), but the maximum absolute pressure for 20 CPML layers decays much quicker.
+
 #### Complex velocity model
+
+Here we investigated a complex velocity model from [[3](#references)] to see how the code behaves with reflections from the model itself. Here note that we used quite a high threshold.
 
 |                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 20       |
 ![1Dcpmlhalo0](./simulations/acoustic2D_complex_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_complex_halo20.gif)
 
+We compare the models with and without CPML layers and see that we get quite good results: the waves are mostly absorbed and maximum absolute pressure value decreases.
+
 ### 3D CPML
+
+For 3D simulations, we mostly wanted to make sure that the code behaved similarly to the 2D code. We made a small change in the first constant velocity model simulation: we have free top boundary conditions. Apart from that we also plot a slice of the model at $z = nz/2$ to compare behaviour with 2D versions.
 
 #### Constant velocity model
 
-| CPML layers = 20         | |
+|          | |
 :-------------------------:|:-------------------------:
-| 2D nz/2 slice            | 3D |
+| 2D nz/2 slice            | 3D isometry |
 ![1Dcpmlhalo0](./simulations/acoustic3D_center_halo20_slice.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_center_halo20.gif)
 
 #### Gradient velocity model
 
-| CPML layers = 20         | |
+|          | |
 :-------------------------:|:-------------------------:
-| 2D nz/2 slice            | 3D |
+| 2D nz/2 slice            | 3D isometry |
 ![1Dcpmlhalo0](./simulations/acoustic3D_gradient_halo20_slice.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_gradient_halo20.gif)
 
 #### Complex velocity model
 
+This complex velocity model has a quite high resolution, so we ran this using multiple GPUs on [Piz Daint](https://www.cscs.ch/computers/piz-daint/). The simulation was farely quick (8000 timesteps in 30 seconds), but it preduced a lot of data that then needed to be postprocessed for visualization.
+
 ![1Dcpmlhalo0](./simulations/acoustic3Dmulti_complex_halo20.gif)
 
+We can see a bunch of reflections from the velocity differences in the model, but at some point all waves are mostly absorbed.
 
 ## Performance evaluation
 
-Talk about the setup for benchmarks (Piz Daint, my laptop etc...). Mention peak performances and other relevant hardware/software information.
+In this section we show performance evaluations of the 2D and 3D implementations run on both CPUs and GPUs.
+
+We are interested in assessing the effective memory throughput `Teff` [GB/s], which measures the amount of data that need to be loaded / stored for the computation to be performed. It is computed similarely for 2D and 3D versions by analysing the code structure and counting each field that gets only loaded once and each field that gets loaded and updated twice. Why don't we look at floating points operations per second? Because the computation we have to preform is clearly memory bound, so using a metric for compute bound operations would be unfair since we could never reach peak performance that way.
+
+We also do a weak scale analysis for the multi-xPU implementations to see if we scale well on multiple nodes.
+
+### Benchmarking setup
+
+GPUs benchmarks were run on Piz Daint Cray XC50 Compute Nodes, each of them with a NVIDIA® Tesla® P100 16GB, peak bandwidth measured with a triad benchmark (around 559 GB/s), Julia version 1.7.2.
+    
+CPUs benchmarks were run on a MacBook Pro 2017 laptop, equipped with an Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz with 2 physical cores, peak bandwidth measured with [STREAM](https://www.cs.virginia.edu/stream/) (around 22 GB/s), Intel Turbo Boost disabled while running. Julia version 1.8.1.
 
 ### Performance of 2D and 3D kernels
 
-Show performance plot.
+Here we plot the effective memory throughput for 2D and 3D implementations on both a 2-core CPU and a single GPU, as function of increasing model size (in number of grid points).
+
+Each measurement (i.e. point in the plot) was conducted using the `@belapsed` macro of the [BenchmarkTools]() toolkit. This means that we measure multiple times and we take the minimum of all the measurments. We also perform a statistical analysis of the set of runs by computing the 95% confidence interval and checking that this interval lies inside the +-5% of the median. This ensures that random noise is not affecting the measurements too much.
+
+![Performance 2D and 3D](./scripts/benchmarks/results/performance_2D3D_perf.png)
+
+We can see that the performance on the GPU gets better as soon as the problem size is big enough, and then we get a plateau. On the contrary, big models do not perform as well on the CPU because of a slower memory bandwidth (for small problem sizes the cache can be used to speedup computation and we see this in the plot). For the 2D computation, we reach around 86% of GPU peak performance, while for 3D we reach around 60%. This is expected, since the GPU memory pattern and threads scheduling is not optimized for 3D computations.
+
+NOTE: this is a log-log plot so differences in performance grow up as performance increases.
 
 ### Weak scaling of 2D and 3D multi-xPU kernels
 
-Show weak scaling plot.
+In this plot we investigate if we have a good scaling code that can be used to run bigger models on multiple xPUs in the same amount of time as smaller models on a single xPU. We only measure GPUs on multiple Piz Daint nodes, since the availability of a fast network is essential to get good scaling acress multiple nodes.
+
+We use as baseline time the best one that was measured for a single node computation.
+
+For these measurements we use a different approach: we run some timesteps, starting to measure time after the first bunch of them and then return the time it took to run the remaining ones. For 2D we run 1000 timesteps and skip the first 200, for 3D we run 100 timesteps and skip the first 19. Also, the starting model size for 2D is $16385 \times 16385$, while the starting 3D model size is $513 \times 513 \times 513$. 
+
+![Weak scaling 3D and 2D](./scripts/benchmarks/results/weak_scaling_eff_2D3D.png)
+
+We can see that we obtain a very high and stable weak scaling efficiency at around 95.8% for 2D and around 99.5% for 3D, at least for the amount of nodes that we could measure. 
 
 ## Conclusions
 
 Talk about what has been achieved and what has been planned for the future.
 
 ## References
-<a name="references"></a>
 
 [1] [An unsplit convolutional perfectly matched layer improved at grazing incidence for the seismic wave equation
 Komatitsch, Dimitri et al.
@@ -240,6 +284,8 @@ GEOPHYSICS (2007),72(5): SM155](https://library.seg.org/doi/10.1190/1.2757586)
 [2] [Convolutional perfectly matched layer for isotropic and anisotropic acoustic wave equations, Pasalic et al., SEG Technical Program Expanded Abstracts 2010](https://library.seg.org/doi/abs/10.1190/1.3513453)
 
 [3] [SEG/EAGE Salt and Overthrust Models](https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models)
+
+[4] [Piz Daint](https://www.cscs.ch/computers/piz-daint/)
 
 # Appendix
 
