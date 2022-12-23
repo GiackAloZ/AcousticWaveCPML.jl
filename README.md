@@ -112,7 +112,7 @@ where:
 - $R$ is the reflection coefficient (different values where used depending on the thickness of the CPML boundary),
 - $d_i(x)$ is the normalized distance (between $0$ and $1$) from $x$ to the interior part $\overline{\Omega}$ of $\Omega$ in dimension $i$.
 
-We picked these experimentally determined coefficients from reference studies of CPML BDCs on acoustic wave equation.
+We picked these experimentally determined coefficients from reference studies of CPML BDCs on acoustic wave equation (see [[1](#references)] and [[2](#references)]).
 
 One crucial observation is that each component of the $\psi_i$ and $\xi_i$ fields is non-zero only in the boundary incident to its dimension (i.e. $\psi_x$ is only non-zero in the $x$-direction boundaries). This simplifies the equations in most of the boundary region: the full equation needs to be computed only for boundary corners.
 
@@ -142,7 +142,7 @@ We have run several simulations in 1D, 2D and 3D to ensure qualitative analysis 
 
 ### Setups
 
-For the source terms, we always use a Ricker wavelet source (second drivative of a Gaussian) to simulate an "impulse" source. We used sources at $8$ Hz and we scale them in amplitude for the 2D and 3D setups (this is done because we need a "stronger" source in 2D and 3D because the energy is spread over an increasingly bigger volume).
+For the source terms, we always use a Ricker wavelet source (second drivative of a Gaussian) to simulate an "impulse" source. We used sources at $8$ Hz and we scale them in amplitude for the 2D and 3D setups (this is done because we need a "stronger" source in 2D and 3D because the energy is spread over an increasingly bigger volume). Also pressure in the animations is sometimes scaled to provide better visualization (i.e. the logarithm of absolute value of pressure is shown in the 3D plots), so the scales have no strict physical meaning in visualization. However, the assumption that zero pressure is the lithostatic pressure still holds.
 
 We also scale the model size in order to always have at least 10 points per wavelength to deal with numerical dipersion. For simplicity, we adpted a constant grid step size in all dimensions for all setups. This does not mean that the grid point number is the same everytime, it just means that the grid cells are square and always have the same size in all dimensions (although our code in general and can be used for any grid step size). This is the same for time step size, we have fixed one that works and fulfill the CFL stability criterion (but one can choose it arbitrarely).
 
@@ -155,7 +155,7 @@ We use different configurations of CPML layers (0, 5, 10 or 20 layers in each bo
 
 ### 1D CPML
 
-For the 1D simulations, we show a simple constant velocity model with 201 grid point and one source in the center. The animations for different CPML layers thickenss are shown below:
+For the 1D simulations, we show a simple constant velocity model with 201 grid points and one source in the center. The animations for different CPML layers thickenss are shown below:
 
 |                          |                       |
 :-------------------------:|:-------------------------:
@@ -168,11 +168,51 @@ We can see that without CPML layers, the wave gets reflected by the boundaries. 
 
 ### 2D CPML
 
-TODO
+#### Constant velocity model
+
+|                          |                       |
+:-------------------------:|:-------------------------:
+| CPML layers = 0            |  CPML layers = 5       |
+![1Dcpmlhalo0](./simulations/acoustic2D_center_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_center_halo5.gif)
+| CPML layers = 10            |  CPML layers = 20       |
+![1Dcpmlhalo10](./simulations/acoustic2D_center_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_center_halo20.gif)
+
+#### Gradient velocity model
+
+|                          |                       |
+:-------------------------:|:-------------------------:
+| CPML layers = 0            |  CPML layers = 5       |
+![1Dcpmlhalo0](./simulations/acoustic2D_gradient_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_gradient_halo5.gif)
+| CPML layers = 10            |  CPML layers = 20       |
+![1Dcpmlhalo10](./simulations/acoustic2D_gradient_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_gradient_halo20.gif)
+
+#### Complex velocity model
+
+|                          |                       |
+:-------------------------:|:-------------------------:
+| CPML layers = 0            |  CPML layers = 20       |
+![1Dcpmlhalo0](./simulations/acoustic2D_complex_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_complex_halo20.gif)
 
 ### 3D CPML
 
-TODO
+#### Constant velocity model
+
+| CPML layers = 20         | |
+:-------------------------:|:-------------------------:
+| 2D nz/2 slice            | 3D |
+![1Dcpmlhalo0](./simulations/acoustic3D_center_halo20_slice.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_center_halo20.gif)
+
+#### Gradient velocity model
+
+| CPML layers = 20         | |
+:-------------------------:|:-------------------------:
+| 2D nz/2 slice            | 3D |
+![1Dcpmlhalo0](./simulations/acoustic3D_gradient_halo20_slice.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_gradient_halo20.gif)
+
+#### Complex velocity model
+
+![1Dcpmlhalo0](./simulations/acoustic3Dmulti_complex_halo20.gif)
+
 
 ## Performance evaluation
 
