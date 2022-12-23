@@ -18,7 +18,7 @@ ENV["GKSwstype"]="nul"
               a_x_hl, a_x_hr,
               b_K_x_hl, b_K_x_hr)
 
-Update the CPML ψ arrays (left and right) using the coeffiecient provided by parameters.
+Update the CPML ψ arrays (left and right) using the coefficients provided by parameters and current pressure `pcur`.
 """
 @views function update_ψ!(ψ_l, ψ_r, pcur,
                           halo, _dx,
