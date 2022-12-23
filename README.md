@@ -157,17 +157,22 @@ We use different configurations of CPML layers (0, 5, 10 or 20 layers in each bo
 
 For the 1D simulations, we show a simple constant velocity model with 201 grid point and one source in the center. The animations for different CPML layers thickenss are shown below:
 
-|                          |                        |
+|                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 5       |
 ![1Dcpmlhalo0](./simulations/acoustic1D_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic1D_halo5.gif)
 | CPML layers = 10            |  CPML layers = 20       |
 ![1Dcpmlhalo10](./simulations/acoustic1D_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic1D_halo20.gif)
 
+We can see that without CPML layers, the wave gets reflected by the boundaries. Starting to add CPML layers, the wave gets absorbed by the boundaries, the more layers we use the less spurious oscillations we get back to the source.
 
 ### 2D CPML
 
+TODO
+
 ### 3D CPML
+
+TODO
 
 ## Performance evaluation
 
@@ -195,3 +200,15 @@ GEOPHYSICS (2007),72(5): SM155](https://library.seg.org/doi/10.1190/1.2757586)
 [2] [Convolutional perfectly matched layer for isotropic and anisotropic acoustic wave equations, Pasalic et al., SEG Technical Program Expanded Abstracts 2010](https://library.seg.org/doi/abs/10.1190/1.3513453)
 
 [3] [SEG/EAGE Salt and Overthrust Models](https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models)
+
+# Appendix
+
+Here is written some information on documentation and how to use the scripts to reproduce results.
+
+## Documentation
+
+TODO
+
+## Reproduce results
+
+TODO
