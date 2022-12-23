@@ -29,9 +29,17 @@ else
     @init_parallel_stencil(Threads, Float64, 2)
 end
 
-# global maximum
+"Compute the global maximum of array `A` across all MPI processes"
 max_g(A) = (max_l = maximum(A); MPI.Allreduce(max_l, MPI.MAX, MPI.COMM_WORLD))
 
+"""
+    update_ψ_x_l!(ψ_x_l, pcur,
+                  halo, _dx, nx,
+                  a_x_hl, b_K_x_hl)
+
+Update the CPML ψ arrays for the left x-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j) function update_ψ_x_l!(ψ_x_l, pcur,
                                                halo, _dx, nx,
                                                a_x_hl, b_K_x_hl)
@@ -39,6 +47,14 @@ max_g(A) = (max_l = maximum(A); MPI.Allreduce(max_l, MPI.MAX, MPI.COMM_WORLD))
     return nothing
 end
 
+"""
+    update_ψ_x_r!(ψ_x_r, pcur,
+                  halo, _dx, nx,
+                  a_x_hr, b_K_x_hr)
+
+Update the CPML ψ arrays for the right x-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j) function update_ψ_x_r!(ψ_x_r, pcur,
                                                  halo, _dx, nx,
                                                  a_x_hr, b_K_x_hr)
@@ -49,6 +65,14 @@ end
     return nothing
 end
 
+"""
+    update_ψ_y_l!(ψ_y_l, pcur,
+                  halo, _dy, ny,
+                  a_y_hl, b_K_y_hl)
+
+Update the CPML ψ arrays for the top y-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j) function update_ψ_y_l!(ψ_y_l, pcur,
                                                  halo, _dy, ny,
                                                  a_y_hl, b_K_y_hl)
@@ -58,6 +82,14 @@ end
     return nothing
 end
 
+"""
+    update_ψ_y_r!(ψ_y_r, pcur,
+                  halo, _dy, ny,
+                  a_y_hr, b_K_y_hr)
+
+Update the CPML ψ arrays for the bottom y-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j) function update_ψ_y_r!(ψ_y_r, pcur,
                                                  halo, _dy, ny,
                                                  a_y_hr, b_K_y_hr)
@@ -68,6 +100,22 @@ end
     return nothing
 end
 
+"""
+    update_p!(pold, pcur, pnew, halo, fact,
+            _dx, _dx2, _dy, _dy2, nx, ny,
+            ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r,
+            ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r,
+            a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+            a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+            ishift, jshift,
+            gnx, gny)
+
+Update the pressure array `pnew` with ParallelStencil on an ImplicitGlobalGrid by using old pressure values,
+the `fact` array with prescaled velocity and CPML ψ and ξ arrays.
+
+The shifting values `ishift, jshift` and global grid sizes `gnx, gny` are used to recontruct the global index
+to do CPML boundary computation only where needed.
+"""
 @parallel_indices (i,j) function update_p!(pold, pcur, pnew, halo, fact,
                                              _dx, _dx2, _dy, _dy2, nx, ny,
                                              ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r,
@@ -98,12 +146,12 @@ end
         end
         # y boundaries
         if j + jshift <= halo+1
-            # left boundary
+            # top boundary
             dψ_y_dy = (ψ_y_l[i,j] - ψ_y_l[i,j-1])*_dy
             ξ_y_l[i,j-1] = b_K_y_l[j-1] * ξ_y_l[i,j-1] + a_y_l[j-1] * (d2p_dy2 + dψ_y_dy)
             damp += fact[i,j] * (dψ_y_dy + ξ_y_l[i,j-1])
         elseif j + jshift >= gny - halo
-            # right boundary
+            # bottom boundary
             jj = j - (ny - halo) + 2
             dψ_y_dy = (ψ_y_r[i,jj] - ψ_y_r[i,jj-1])*_dy
             ξ_y_r[i,jj-1] = b_K_y_r[jj-1] * ξ_y_r[i,jj-1] + a_y_r[jj-1] * (d2p_dy2 + dψ_y_dy)
@@ -117,6 +165,15 @@ end
     return nothing
 end
 
+"""
+    inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, nx, ny)
+
+Inject sources onto the `pnew` array using ParallelStencil on an ImplicitGlobalGrid
+with waveforms in `dt2srctf` and positions `possrcs` for iteration `it`.
+
+The shifting values `ishift, jshift` and global grid sizes `gnx, gny` are used to recontruct the global index
+to inject only sources that are inside the local grid.
+"""
 @parallel_indices (is) function inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, nx, ny)
     # Get local source positions from global ones
     isrc = floor(Int, possrcs[is,1]) - ishift
@@ -130,6 +187,27 @@ end
     return nothing
 end
 
+"""
+    kernel!(
+        pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2,
+        halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r,
+        a_x_hl, a_x_hr, b_K_x_hl, b_K_x_hr,
+        a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+        a_y_hl, a_y_hr, b_K_y_hl, b_K_y_hr,
+        a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+        possrcs, dt2srctf, it,
+        gnx, gny,
+        dims, coords, b_width
+    )
+
+Perform the timestep number `it` using ParallelStencil on an ImplicitGlobalGrid
+of the acoustic 2D computation on pressure and CPML arrays.
+
+Return the pressure arrays swapped according to the following scheme:
+- pold --> pnew
+- pcur --> pold
+- pnew --> pcur
+"""
 @views function kernel!(
     pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2,
     halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r,
@@ -142,11 +220,11 @@ end
     dims, coords, b_width
 )
     nx, ny = size(pcur)
-    # compute shifting to
+    # compute shifting for global indexes
     ishift = coords[1] * (nx-2)
     jshift = coords[2] * (ny-2)
 
-    # update ψ arrays
+    # update ψ arrays only if share the physical boundaries
     if coords[1] == 0
         @parallel_async (1:halo+1,1:ny) update_ψ_x_l!(ψ_x_l, pcur,
                                                            halo, _dx, nx,
@@ -190,6 +268,47 @@ end
 end
 
 
+"""
+    acoustic2D_multixPU(
+        lx::Real,
+        ly::Real,
+        nx::Integer,
+        ny::Integer,
+        nt::Integer,
+        vel_func::Function,
+        possrcs;
+        dt::Real = 0.0012,
+        halo::Integer = 20,
+        rcoef::Real = 0.0001,
+        do_vis::Bool = true,
+        nvis::Integer = 5,
+        gif_name::String = "acoustic2D_multixPU",
+        plims::Vector{<:Real} = [-3, 3],
+        threshold::Real = 0.01,
+        freetop::Bool = true,
+        init_MPI::Bool = true
+    )
+
+Compute `nt` timesteps of the acoustic 2D wave equation using ParalellStencil on multiple xPUs with CPML boundary conditions on a model with size `lx`x`ly` meters,
+local grid `nx`x`ny`, velocity field function `vel_func`, position of sources `possrcs`, number of CPML layers in each boundary `halo` and CPML reflection coeffiecient `rcoef`.
+
+The velocity function `vel_func` must be a two argument function that, given the coordinates of a point in space in meters, returns the value of the velocity in that point.
+
+The position of sources must be a 2D array with the `size(possrcs,1)` equal to the number of sources and `size(possrcs,2)` equal to 2.
+
+Return the last timestep pressure.
+
+# Arguments
+- `dt`: time step size.
+- `do_vis`: to plot visualization or not.
+- `do_bench`: to perform a benchmark instead of the computation.
+- `nvis`: frequency of timestep for visualization
+- `gif_name`: name of the gif to save
+- `plims`: pressure limits in visualizion plot
+- `threshold`: percentage of `plims` to cut out of visualization.
+- `freetop`: to have free top BDCs or not.
+- `init_MPI`: to let ImplicitGlobalGrid initialize and finalize MPI or not.
+"""
 @views function acoustic2D_multixPU(
     lx::Real,
     ly::Real,
@@ -198,6 +317,7 @@ end
     nt::Integer,
     vel_func::Function,
     possrcs;
+    dt::Real = 0.0012,
     halo::Integer = 20,
     rcoef::Real = 0.0001,
     do_vis::Bool = true,
@@ -221,7 +341,6 @@ end
     gnx, gny = nx_g(), ny_g()            # global grid size
     dx = lx / (gnx-1)                    # grid step size x-direction [m]
     dy = ly / (gny-1)                    # grid step size y-direction [m]
-    dt = 0.0012                          # 1.0 / (sqrt(1.0/(dx^2) + 1.0/(dy^2))) / vel_max  # timestep size (CFL + Courant condition) [s]
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # Initialize local velocity model
     vel  = zeros(nx, ny)

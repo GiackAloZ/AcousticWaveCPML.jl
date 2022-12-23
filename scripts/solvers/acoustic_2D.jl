@@ -183,7 +183,9 @@ end
     )
 
 Compute `nt` timesteps of the acoustic 2D wave equation with CPML boundary conditions on a model with size `lx`x`ly` meters,
-velocity field `vel`, number of CPML layers in each boundary `halo` and CPML reflection coeffiecient `rcoef`.
+velocity field `vel`, position of sources `possrcs`, number of CPML layers in each boundary `halo` and CPML reflection coeffiecient `rcoef`.
+
+The position of sources must be a 2D array with the `size(possrcs,1)` equal to the number of sources and `size(possrcs,2)` equal to 2.
 
 Return the last timestep pressure.
 
