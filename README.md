@@ -27,8 +27,7 @@ performance and scalability to address the above-mentioned calculations. The Jul
 then a natural candidate to fill such gap. Julia has recently emerged among computational physicists because
 of a combination of easiness of use (reminiscent of languages like Python and MatLab) and its speed. Moreover,
 Julia natively supports several parallelization paradigms (such as shared memory, message passing and GPU
-computing) and recently developed packages like ParallelStencil.jl, which make for a simple, yet powerful, way
-to implement scalable, efficient, maintainable and hardware-agnostic parallel algorithms.
+computing) and recently developed packages like [ParallelStencil.jl](https://github.com/omlins/ParallelStencil.jl) and [ImplicitGlobalGrid.jl](https://github.com/eth-cscs/ImplicitGlobalGrid.jl), which make for a simple, yet powerful, way to implement scalable, efficient, maintainable and hardware-agnostic parallel algorithms.
 
 We have implemented some time-domain finite-difference solvers for acoustic wave propagation
 with CPML boundary conditions on GPUs using Julia. Extensive benchmarks and performance evaluations of the developed parallel code have been conducted to assess the gain in performance and the possbility to scale on multi-GPUs.
@@ -40,6 +39,7 @@ The main PDE to solve is the classical acoustic wave equation:
 $$
 \frac{\partial^2 p}{\partial t^2} = c^2 \nabla^2 p,
 $$
+
 where $p$ is the pressure and $c$ is the wave propagation velocity (i.e. speed of sound). We consider from now on the pressure term $p$ to be the difference from lithostatic pressure. Hence we consider as initial values for pressure $p(x,0) = 0$.
 
 If we also consider a source term $s(x,t)$ the function becomes:
@@ -47,7 +47,6 @@ If we also consider a source term $s(x,t)$ the function becomes:
 $$
 \frac{\partial^2 p}{\partial t^2} = c^2 \nabla^2 p + s
 $$
-
 
 Consider some rectangular area of space $\Omega \in \mathbb{R}^n, n = 1, 2, 3$. Consider also a fine time $T$ at which we end our simulation. Then we can choose an appropriate boundary condition on the boundary $\partial \Omega$ of $\Omega$ and we have a boundary value problem we can solve on the space-time set $\Omega \times [0,T]$.
 
@@ -69,6 +68,7 @@ The main concept of CPML BDCs is to enhance the standard wave equation at the bo
 $$
 \frac{\partial^2 p}{\partial t^2} = c^2 \left( \nabla^2 p + \left( \frac{\partial \psi_i}{\partial i} \right) + \xi_i \right),~ \text{in}~ \tilde{\partial}_i \Omega \times [0,T]
 $$
+
 where $i$ is used as Einstein notation to denote the various dimensions (e.g. $i \in \{x,y,z\}$ in 3D) and $\tilde{\partial}_i \Omega$ denotes an extension of $\partial \Omega$ in the $i$ dimension to create a thicker boundary layer.
 
 These two new fields $\psi_i$ and $\xi_i$ evolution in time is expressed by the following PDEs:
@@ -79,7 +79,9 @@ $$
 \xi^n_i &= \frac{b_i}{K_i} \xi^{n-1}_i &&+ a_i \left[ \left( \frac{\partial^2 p}{\partial i^2} \right)^n + \left( \frac{\partial \psi}{\partial i} \right)^n \right],
 \end{align}
 $$
+
 where $n$ is an index that represents the current time step, not a power exponent. Initialization of the fields is straight-forward:
+
 $$
 \psi^0_i = 0, \xi^0_i = 0, \forall i~ \text{in}~ \tilde{\partial} \Omega
 $$
@@ -93,13 +95,16 @@ b_i(x) &= \exp(- \Delta t (D_i(x) + \alpha_i(x))), \\
 a_i(x) &= D_i(x) \frac{b_i(x) - 1.0}{K_i(x) (D_i(x) + K_i(x) \alpha_i(x))}
 \end{align*}
 $$
+
 and
+
 $$
 \begin{align*}
 D_i(x) &= \frac{-(N + 1) \max(c) \log(R)}{2t_i} {d_i(x)}^{N}, \\
 \alpha_i(x) &= \pi f (1 - d_i(x)),
 \end{align*}
 $$
+
 where:
 - $t_i$ is the thickness (in meters) of the CPML boundary in dimension $i$,
 - $N$ is a power coefficient (we used $N=2$),
@@ -112,6 +117,7 @@ We picked these experimentally determined coefficients from reference studies of
 One crucial observation is that each component of the $\psi_i$ and $\xi_i$ fields is non-zero only in the boundary incident to its dimension (i.e. $\psi_x$ is only non-zero in the $x$-direction boundaries). This simplifies the equations in most of the boundary region: the full equation needs to be computed only for boundary corners.
 
 The full set of equations with boundary conditions then becomes:
+
 $$
 \begin{align}
 \frac{\partial^2 p}{\partial t^2} &= c^2 \nabla^2 p + s &&,~ \text{in}~ \overline{\Omega} &&\times [0,T], \\
