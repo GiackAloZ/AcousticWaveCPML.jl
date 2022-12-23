@@ -50,7 +50,7 @@ end
 
 MPI.Init()
 
-# run_simple()
+run_simple()
 run_complex()
 
 MPI.Finalize()

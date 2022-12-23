@@ -299,8 +299,16 @@ Here is written some information on documentation and how to use the scripts to 
 
 ## Documentation
 
-TODO
+The scripts are documented using Julia doc strings. Simply load the script with the solver function you want to use (e.g. for single xPU 2D acoustic load `scripts/solvers/acoustic2D_xPU.jl`) and then us the Julia help `?` for retrieving the docs for that function.
 
-## Reproduce results
+_DISCLAIMER: It is planned to release a fully fledged documentation of the package for v1.1.0_
 
-TODO
+## How to reproduce results
+
+We provide ready-to-use scripts to run simulations shown in this README. The scripts are inside the `script` folder and are called `run_<solver_version_here>.jl`. They run the same setups (and more) that we described. You can take inspiration from those scripts to run your own models and simulations configurations.
+
+We also provide scripts for running benchmarks. You can find these in the `scripts/benchmarks` folder. We also have scripts for plotting benchmarks in this folder. There is also most of the data to plot benchmarks here.
+
+We also provide submissions script for Piz Daint in the `submit_daint` folder. Here you can find various scripts for submitting jobs on the Slurm queue and some results from our runs. There is data to use for weak scaling efficiency plots here.
+
+_REMEMBER: If you wish to run multi-xPUs implementations, you should use your own `mpiexecjl`_
