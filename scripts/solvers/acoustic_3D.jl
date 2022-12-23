@@ -13,6 +13,19 @@ DOCS_FLD = joinpath(dirname(dirname(@__DIR__)), "simulations")
 # Disable interactive visualization
 ENV["GKSwstype"]="nul"
 
+"""
+    update_ψ!(ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r, pcur,
+            halo, _dx, _dy, _dz,
+            a_x_hl, a_x_hr,
+            b_K_x_hl, b_K_x_hr,
+            a_y_hl, a_y_hr,
+            b_K_y_hl, b_K_y_hr,
+            a_z_hl, a_z_hr,
+            b_K_z_hl, b_K_z_hr)
+
+Update the CPML ψ arrays (left and right for x-boundaries, top and bottom for y-boundaries, front and back for z-boundaries)
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @views function update_ψ!(ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r, pcur,
                           halo, _dx, _dy, _dz,
                           a_x_hl, a_x_hr,
@@ -60,6 +73,16 @@ ENV["GKSwstype"]="nul"
     end
 end
 
+"""
+    update_p!(pold, pcur, pnew, halo, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
+            ψ_x_l = nothing, ψ_x_r = nothing, ψ_y_l = nothing, ψ_y_r = nothing, ψ_z_l = nothing, ψ_z_r = nothing,
+            ξ_x_l = nothing, ξ_x_r = nothing, ξ_y_l = nothing, ξ_y_r = nothing, ξ_z_l = nothing, ξ_z_r = nothing,
+            a_x_l = nothing, a_x_r = nothing, b_K_x_l = nothing, b_K_x_r = nothing,
+            a_y_l = nothing, a_y_r = nothing, b_K_y_l = nothing, b_K_y_r = nothing,
+            a_z_l = nothing, a_z_r = nothing, b_K_z_l = nothing, b_K_z_r = nothing)
+
+Update the pressure array `pnew` by using old pressure values, the `fact` array with prescaled velocity and CPML ψ and ξ arrays.
+"""
 @views function update_p!(pold, pcur, pnew, halo, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
                           ψ_x_l = nothing, ψ_x_r = nothing, ψ_y_l = nothing, ψ_y_r = nothing, ψ_z_l = nothing, ψ_z_r = nothing,
                           ξ_x_l = nothing, ξ_x_r = nothing, ξ_y_l = nothing, ξ_y_r = nothing, ξ_z_l = nothing, ξ_z_r = nothing,
@@ -122,6 +145,11 @@ end
     end
 end
 
+"""
+    inject_sources!(pnew, dt2srctf, possrcs, it)
+
+Inject sources onto the `pnew` array with waveforms in `dt2srctf` and positions `possrcs` for iteration `it`.
+"""
 @views function inject_sources!(pnew, dt2srctf, possrcs, it)
     _, nsrcs = size(dt2srctf)
     for s = 1:nsrcs
@@ -132,6 +160,26 @@ end
     end
 end
 
+"""
+    kernel!(
+        pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
+        halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r, ψ_z_l, ψ_z_r, ξ_z_l, ξ_z_r,
+        a_x_hl, a_x_hr, b_K_x_hl, b_K_x_hr,
+        a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+        a_y_hl, a_y_hr, b_K_y_hl, b_K_y_hr,
+        a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+        a_z_hl, a_z_hr, b_K_z_hl, b_K_z_hr,
+        a_z_l, a_z_r, b_K_z_l, b_K_z_r,
+        possrcs, dt2srctf, it
+    )
+
+Perform the timestep number `it` of the acoustic 3D computation on pressure and CPML arrays.
+
+Return the pressure arrays swapped according to the following scheme:
+- pold --> pnew
+- pcur --> pold
+- pnew --> pcur
+"""
 @views function kernel!(
     pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
     halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r, ψ_z_l, ψ_z_r, ξ_z_l, ξ_z_r,
@@ -162,6 +210,49 @@ end
     return pcur, pnew, pold
 end
 
+"""
+    acoustic3D(
+        lx::Real,
+        ly::Real,
+        lz::Real,
+        nt::Integer,
+        vel::Array{<:Real, 3},
+        possrcs;
+        dt::Real = 0.0012,
+        halo::Integer = 20,
+        rcoef::Real = 0.0001,
+        do_vis::Bool = true,
+        do_save::Bool = false,
+        do_bench::Bool = false,
+        nvis::Integer = 5,
+        nsave::Integer = 100,
+        gif_name::String = "acoustic3D",
+        save_name::String = "acoustic3D",
+        plims::Vector{<:Real} = [-3, 3],
+        threshold::Real = 0.01,
+        freetop::Bool = true
+    )
+
+Compute `nt` timesteps of the acoustic 3D wave equation with CPML boundary conditions on a model with size `lx`x`ly`x`lz` meters,
+velocity field `vel`, position of sources `possrcs`, number of CPML layers in each boundary `halo` and CPML reflection coeffiecient `rcoef`.
+
+The position of sources must be a 2D array with the `size(possrcs,1)` equal to the number of sources and `size(possrcs,2)` equal to 3.
+
+Return the last timestep pressure.
+
+# Arguments
+- `dt`: time step size.
+- `do_vis`: to plot visualization or not.
+- `do_save`: to save intermediate pressure field or not.
+- `do_bench`: to perform a benchmark instead of the computation.
+- `nvis`: frequency of timestep for visualization.
+- `nsave`: frequency of timestep for saving.
+- `gif_name`: name of the gif to save.
+- `save_name`: name of the pressure file to save.
+- `plims`: pressure limits in visualizion plot.
+- `threshold`: percentage of `plims` to cut out of visualization.
+- `freetop`: to have free top BDCs or not.
+"""
 @views function acoustic3D(
     lx::Real,
     ly::Real,
@@ -169,6 +260,7 @@ end
     nt::Integer,
     vel::Array{<:Real, 3},
     possrcs;
+    dt::Real = 0.0012,
     halo::Integer = 20,
     rcoef::Real = 0.0001,
     do_vis::Bool = true,
@@ -177,6 +269,7 @@ end
     nvis::Integer = 5,
     nsave::Integer = 100,
     gif_name::String = "acoustic3D",
+    save_name::String = "acoustic3D",
     plims::Vector{<:Real} = [-3, 3],
     threshold::Real = 0.01,
     freetop::Bool = true
@@ -194,7 +287,6 @@ end
     dx = lx / (nx-1)                    # grid step size [m]
     dy = ly / (ny-1)                    # grid step size [m]
     dz = lz / (nz-1)                    # grid step size [m]
-    dt = 0.0012                         # 1.0 / (sqrt(1.0/(dx^2) + 1.0/(dy^2) + 1.0/(dz^2))) / vel_max  # timestep size (CFL + Courant condition) [s]
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # CPML numerics
     alpha_max        = 2.0*π*(f0/2.0)

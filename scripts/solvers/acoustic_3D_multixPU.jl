@@ -29,9 +29,17 @@ else
     @init_parallel_stencil(Threads, Float64, 3)
 end
 
-# global maximum
+"Compute the global maximum of array `A` across all MPI processes"
 max_g(A) = (max_l = maximum(A); MPI.Allreduce(max_l, MPI.MAX, MPI.COMM_WORLD))
 
+"""
+    update_ψ_x_l!(ψ_x_l, pcur,
+                  halo, _dx, nx,
+                  a_x_hl, b_K_x_hl)
+
+Update the CPML ψ arrays for the left x-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j,k) function update_ψ_x_l!(ψ_x_l, pcur,
                                                  halo, _dx, nx,
                                                  a_x_hl, b_K_x_hl)
@@ -39,6 +47,14 @@ max_g(A) = (max_l = maximum(A); MPI.Allreduce(max_l, MPI.MAX, MPI.COMM_WORLD))
     return nothing
 end
 
+"""
+    update_ψ_x_r!(ψ_x_r, pcur,
+                  halo, _dx, nx,
+                  a_x_hr, b_K_x_hr)
+
+Update the CPML ψ arrays for the right x-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j,k) function update_ψ_x_r!(ψ_x_r, pcur,
                                                  halo, _dx, nx,
                                                  a_x_hr, b_K_x_hr)
@@ -49,6 +65,14 @@ end
     return nothing
 end
 
+"""
+    update_ψ_y_l!(ψ_y_l, pcur,
+                  halo, _dy, ny,
+                  a_y_hl, b_K_y_hl)
+
+Update the CPML ψ arrays for the top y-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j,k) function update_ψ_y_l!(ψ_y_l, pcur,
                                                  halo, _dy, ny,
                                                  a_y_hl, b_K_y_hl)
@@ -58,6 +82,14 @@ end
     return nothing
 end
 
+"""
+    update_ψ_y_r!(ψ_y_r, pcur,
+                  halo, _dy, ny,
+                  a_y_hr, b_K_y_hr)
+
+Update the CPML ψ arrays for the bottom y-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j,k) function update_ψ_y_r!(ψ_y_r, pcur,
                                                  halo, _dy, ny,
                                                  a_y_hr, b_K_y_hr)
@@ -68,6 +100,14 @@ end
     return nothing
 end
 
+"""
+    update_ψ_z_l!(ψ_z_l, pcur,
+                  halo, _dz, nz,
+                  a_z_hl, b_K_z_hl)
+
+Update the CPML ψ arrays for the front z-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j,k) function update_ψ_z_l!(ψ_z_l, pcur,
                                                  halo, _dz, nz,
                                                  a_z_hl, b_K_z_hl)
@@ -77,6 +117,14 @@ end
     return nothing
 end
 
+"""
+    update_ψ_z_r!(ψ_z_r, pcur,
+                  halo, _dz, nz,
+                  a_z_hr, b_K_z_hr)
+
+Update the CPML ψ arrays for the back z-boundary with ParallelStencil
+using the coefficients provided by parameters and current pressure `pcur`.
+"""
 @parallel_indices (i,j,k) function update_ψ_z_r!(ψ_z_r, pcur,
                                                  halo, _dz, nz,
                                                  a_z_hr, b_K_z_hr)
@@ -87,6 +135,23 @@ end
     return nothing
 end
 
+"""
+    update_p!(pold, pcur, pnew, halo, fact,
+            _dx, _dx2, _dy, _dy2, _dz, _dz2, nx, ny, nz,
+            ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r,
+            ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r, ξ_z_l, ξ_z_r,
+            a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+            a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+            a_z_l, a_z_r, b_K_z_l, b_K_z_r,
+            ishift, jshift, kshift,
+            gnx, gny, gnz)
+
+Update the pressure array `pnew` with ParallelStencil on an ImplicitGlobalGrid by using old pressure values,
+the `fact` array with prescaled velocity and CPML ψ and ξ arrays.
+
+The shifting values `ishift, jshift, kshift` and global grid sizes `gnx, gny, gnz` are used to recontruct the global index
+to do CPML boundary computation only where needed.
+"""
 @parallel_indices (i,j,k) function update_p!(pold, pcur, pnew, halo, fact,
                                              _dx, _dx2, _dy, _dy2, _dz, _dz2, nx, ny, nz,
                                              ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r,
@@ -151,6 +216,15 @@ end
     return nothing
 end
 
+"""
+    inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, nx, ny)
+
+Inject sources onto the `pnew` array using ParallelStencil on an ImplicitGlobalGrid
+with waveforms in `dt2srctf` and positions `possrcs` for iteration `it`.
+
+The shifting values `ishift, jshift, kshift` are used to recontruct the global index
+to inject only sources that are inside the local grid.
+"""
 @parallel_indices (is) function inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, kshift, nx, ny, nz)
     # Get local source positions from global ones
     isrc = floor(Int, possrcs[is,1]) - ishift
@@ -165,6 +239,29 @@ end
     return nothing
 end
 
+"""
+    kernel!(
+        pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
+        halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r, ψ_z_l, ψ_z_r, ξ_z_l, ξ_z_r,
+        a_x_hl, a_x_hr, b_K_x_hl, b_K_x_hr,
+        a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+        a_y_hl, a_y_hr, b_K_y_hl, b_K_y_hr,
+        a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+        a_z_hl, a_z_hr, b_K_z_hl, b_K_z_hr,
+        a_z_l, a_z_r, b_K_z_l, b_K_z_r,
+        possrcs, dt2srctf, it,
+        gnx, gny, gnz,
+        dims, coords, b_width
+    )
+
+Perform the timestep number `it` using ParallelStencil on an ImplicitGlobalGrid
+of the acoustic 3D computation on pressure and CPML arrays.
+
+Return the pressure arrays swapped according to the following scheme:
+- pold --> pnew
+- pcur --> pold
+- pnew --> pcur
+"""
 @views function kernel!(
     pold, pcur, pnew, fact, _dx, _dx2, _dy, _dy2, _dz, _dz2,
     halo, ψ_x_l, ψ_x_r, ξ_x_l, ξ_x_r, ψ_y_l, ψ_y_r, ξ_y_l, ξ_y_r, ψ_z_l, ψ_z_r, ξ_z_l, ξ_z_r,
@@ -179,7 +276,7 @@ end
     dims, coords, b_width
 )
     nx, ny, nz = size(pcur)
-    # compute shifting to
+    # compute shifting for global indexes
     ishift = coords[1] * (nx-2)
     jshift = coords[2] * (ny-2)
     kshift = coords[3] * (nz-2)
@@ -238,6 +335,53 @@ end
     return pcur, pnew, pold
 end
 
+"""
+    acoustic3D_multixPU(
+        lx::Real,
+        ly::Real,
+        lz::Real,
+        nx::Integer,
+        ny::Integer,
+        nz::Integer,
+        nt::Integer,
+        vel_func::Function,
+        possrcs;
+        dt::Real = 0.0012,
+        halo::Integer = 20,
+        rcoef::Real = 0.0001,
+        do_vis::Bool = true,
+        do_save::Bool = true,
+        nvis::Integer = 5,
+        nsave::Integer = 100,
+        gif_name::String = "acoustic3D_multixPU",
+        save_name::String = "acoustic3D_multixPU",
+        plims::Vector{<:Real} = [-3, 3],
+        threshold::Real = 0.01,
+        freetop::Bool = true,
+        init_MPI::Bool = true
+    )
+
+Compute `nt` timesteps of the acoustic 3D wave equation using ParalellStencil on multiple xPUs with CPML boundary conditions on a model with size `lx`x`ly`x`lz` meters,
+local grid `nx`x`ny`x`lz`, velocity field function `vel_func`, position of sources `possrcs`, number of CPML layers in each boundary `halo` and CPML reflection coeffiecient `rcoef`.
+
+The velocity function `vel_func` must be a three argument function that, given the coordinates of a point in space in meters, returns the value of the velocity in that point.
+
+The position of sources must be a 2D array with the `size(possrcs,1)` equal to the number of sources and `size(possrcs,2)` equal to 3.
+
+Return the last timestep pressure.
+
+# Arguments
+- `dt`: time step size.
+- `do_vis`: to plot visualization or not.
+- `do_save`: to save intermediate pressure field or not.
+- `nvis`: frequency of timestep for visualization.
+- `nsave`: frequency of timestep for saving.
+- `gif_name`: name of the gif to save.
+- `save_name`: name of the pressure file to save.
+- `plims`: pressure limits in visualizion plot.
+- `threshold`: percentage of `plims` to cut out of visualization.
+- `freetop`: to have free top BDCs or not.
+"""
 @views function acoustic3D_multixPU(
     lx::Real,
     ly::Real,
@@ -248,6 +392,7 @@ end
     nt::Integer,
     vel_func::Function,
     possrcs;
+    dt::Real = 0.0012,
     halo::Integer = 20,
     rcoef::Real = 0.0001,
     do_vis::Bool = true,
@@ -275,7 +420,6 @@ end
     dx = lx / (gnx-1)                    # grid step size x-direction [m]
     dy = ly / (gny-1)                    # grid step size y-direction [m]
     dz = lz / (gnz-1)                    # grid step size z-direction [m]
-    dt = 0.0012                         # 1.0 / (sqrt(1.0/(dx^2) + 1.0/(dy^2) + 1.0/(dz^2))) / vel_max  # timestep size (CFL + Courant condition) [s]
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # Initialize local velocity model
     vel  = zeros(nx, ny, nz)

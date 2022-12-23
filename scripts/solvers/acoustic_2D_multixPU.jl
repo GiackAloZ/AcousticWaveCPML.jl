@@ -171,7 +171,7 @@ end
 Inject sources onto the `pnew` array using ParallelStencil on an ImplicitGlobalGrid
 with waveforms in `dt2srctf` and positions `possrcs` for iteration `it`.
 
-The shifting values `ishift, jshift` and global grid sizes `gnx, gny` are used to recontruct the global index
+The shifting values `ishift, jshift` are used to recontruct the global index
 to inject only sources that are inside the local grid.
 """
 @parallel_indices (is) function inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, nx, ny)
@@ -267,7 +267,6 @@ Return the pressure arrays swapped according to the following scheme:
     return pcur, pnew, pold
 end
 
-
 """
     acoustic2D_multixPU(
         lx::Real,
@@ -301,7 +300,6 @@ Return the last timestep pressure.
 # Arguments
 - `dt`: time step size.
 - `do_vis`: to plot visualization or not.
-- `do_bench`: to perform a benchmark instead of the computation.
 - `nvis`: frequency of timestep for visualization
 - `gif_name`: name of the gif to save
 - `plims`: pressure limits in visualizion plot
