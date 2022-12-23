@@ -307,6 +307,8 @@ _DISCLAIMER: It is planned to release a fully fledged documentation of the packa
 
 We provide ready-to-use scripts to run simulations shown in this README. The scripts are inside the `script` folder and are called `run_<solver_version_here>.jl`. They run the same setups (and more) that we described. You can take inspiration from those scripts to run your own models and simulations configurations.
 
+To turn on GPU computation instead of CPU, you need to change a constant inside the solver that you want to use called `USE_GPU`. This is one of the many rooms for improvements that will be accounted for in the v1.1.0 version.
+
 We also provide scripts for running benchmarks. You can find these in the `scripts/benchmarks` folder. We also have scripts for plotting benchmarks in this folder. There is also most of the data to plot benchmarks here.
 
 We also provide submissions script for Piz Daint in the `submit_daint` folder. Here you can find various scripts for submitting jobs on the Slurm queue and some results from our runs. There is data to use for weak scaling efficiency plots here.
