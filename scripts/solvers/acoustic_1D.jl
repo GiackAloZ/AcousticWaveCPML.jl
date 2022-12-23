@@ -12,6 +12,14 @@ DOCS_FLD = joinpath(dirname(dirname(@__DIR__)), "simulations")
 # Disable interactive visualization
 ENV["GKSwstype"]="nul"
 
+"""
+    update_ψ!(ψ_l, ψ_r, pcur,
+              halo, _dx,
+              a_x_hl, a_x_hr,
+              b_K_x_hl, b_K_x_hr)
+
+Update the CPML ψ arrays (left and right) using the coeffiecient provided by parameters.
+"""
 @views function update_ψ!(ψ_l, ψ_r, pcur,
                           halo, _dx,
                           a_x_hl, a_x_hr,
@@ -26,6 +34,15 @@ ENV["GKSwstype"]="nul"
     end
 end
 
+"""
+    update_p!(pold, pcur, pnew, halo, fact, _dx, _dx2,
+              ψ_l = nothing, ψ_r = nothing,
+              ξ_l = nothing, ξ_r = nothing,
+              a_x_l = nothing, a_x_r = nothing,
+              b_K_x_l = nothing, b_K_x_r = nothing)
+
+Update the pressure array `pnew` by using old pressure values, the `fact` array with prescaled velocity and CPML ψ and ξ arrays.
+"""
 @views function update_p!(pold, pcur, pnew, halo, fact, _dx, _dx2,
                           ψ_l = nothing, ψ_r = nothing,
                           ξ_l = nothing, ξ_r = nothing,
@@ -55,6 +72,11 @@ end
     end
 end
 
+"""
+    inject_sources!(pnew, dt2srctf, possrcs, it)
+
+Inject sources onto the `pnew` array with waveforms in `dt2srctf` and positions `possrcs` for iteration `it`.
+"""
 @views function inject_sources!(pnew, dt2srctf, possrcs, it)
     _, nsrcs = size(dt2srctf)
     for i = 1:nsrcs
@@ -63,6 +85,22 @@ end
     end
 end
 
+"""
+    kernel!(
+        pold, pcur, pnew, fact, _dx, _dx2,
+        halo, ψ_l, ψ_r, ξ_l, ξ_r,
+        a_x_hl, a_x_hr, b_K_x_hl, b_K_x_hr,
+        a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+        possrcs, dt2srctf, it
+    )
+
+Perform the timestep number `it` of the acoustic 1D computation on pressure and CPML arrays.
+
+Return the pressure arrays swapped according to the following scheme:
+- pold --> pnew
+- pcur --> pold
+- pnew --> pcur
+"""
 @views function kernel!(
     pold, pcur, pnew, fact, _dx, _dx2,
     halo, ψ_l, ψ_r, ξ_l, ξ_r,
@@ -84,6 +122,32 @@ end
     return pcur, pnew, pold
 end
 
+"""
+    acoustic1D(
+        lx::Real,
+        nt::Integer,
+        vel::Vector{<:Real};
+        halo::Integer = 20,
+        rcoef::Real = 0.0001,
+        do_vis::Bool = true,
+        do_bench::Bool = false,
+        nvis::Integer = 2,
+        gif_name::String = "acoustic1D",
+        plims::Vector{<:Real} = [-1e-1, 1e-1]
+    )
+
+Compute `nt` timesteps of the acoustic 1D wave equation with CPML boundary conditions on a model with size `lx` meters,
+velocity field `vel`, number of CPML layers in each boundary `halo` and CPML reflection coeffiecient `rcoef`.
+
+Return the last timestep pressure.
+
+# Arguments
+- `do_vis`: to plot visualization or not.
+- `do_bench`: to perform a benchmark instead of the computation.
+- `nvis`: frequency of timestep for visualization
+- `gif_name`: name of the gif to save
+- `plims`: pressure limits in visualizion plot
+"""
 @views function acoustic1D(
     lx::Real,
     nt::Integer,
@@ -198,5 +262,5 @@ end
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"))
     end
 
-    return nothing
+    return pcur
 end
