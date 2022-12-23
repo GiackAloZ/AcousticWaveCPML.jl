@@ -149,9 +149,21 @@ We also scale the model size in order to always have at least 10 points per wave
 We have mainly three types of setups:
 - constant velocity models with a single source located in the center and CPML layers in all boundary regions;
 - gradient velocity (directly proportional to depth) with multiple sources located at the top of the model and **NO** CPML layers on the top boundary (to simulate free top boundary conditions).
-- complex velocity model 
+- complex velocity model (from [[3](#references)]) with multiple sources located at the top of the model and **NO** CPML layers on the top boundary.
+
+We use different configurations of CPML layers (0, 5, 10 or 20 layers in each boundary) with different reflection coefficients (these are shown in the animation plots).
 
 ### 1D CPML
+
+For the 1D simulations, we show a simple constant velocity model with 201 grid point and one source in the center. The animations for different CPML layers thickenss are shown below:
+
+|                          |                        |
+:-------------------------:|:-------------------------:
+| CPML layers = 0            |  CPML layers = 5       |
+![1Dcpmlhalo0](./simulations/acoustic1D_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic1D_halo5.gif)
+| CPML layers = 10            |  CPML layers = 20       |
+![1Dcpmlhalo10](./simulations/acoustic1D_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic1D_halo20.gif)
+
 
 ### 2D CPML
 
@@ -173,6 +185,13 @@ Show weak scaling plot.
 
 Talk about what has been achieved and what has been planned for the future.
 
-## Reference
+## References
+<a name="references"></a>
 
-Add references (CPML, complex model, etc...)
+[1] [An unsplit convolutional perfectly matched layer improved at grazing incidence for the seismic wave equation
+Komatitsch, Dimitri et al.
+GEOPHYSICS (2007),72(5): SM155](https://library.seg.org/doi/10.1190/1.2757586)
+
+[2] [Convolutional perfectly matched layer for isotropic and anisotropic acoustic wave equations, Pasalic et al., SEG Technical Program Expanded Abstracts 2010](https://library.seg.org/doi/abs/10.1190/1.3513453)
+
+[3] [SEG/EAGE Salt and Overthrust Models](https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models)
