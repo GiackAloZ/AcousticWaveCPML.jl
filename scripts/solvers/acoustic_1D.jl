@@ -1,4 +1,4 @@
-using Plots
+using Plots, Plots.Measures
 using BenchmarkTools
 using Printf
 
@@ -94,7 +94,7 @@ end
     do_bench::Bool = false,
     nvis::Integer = 2,
     gif_name::String = "acoustic1D",
-    plims::Vector{<:Real} = [-1e-4, 1e-4]
+    plims::Vector{<:Real} = [-1e-1, 1e-1]
 )
     # Physics
     f0 = 8.0                            # dominating frequency [Hz]
@@ -133,15 +133,11 @@ end
     ψ_l, ψ_r = zeros(halo+1), zeros(halo+1)
     ξ_l, ξ_r = zeros(halo), zeros(halo)
     # sources
-    possrcs = zeros(Int,3,1)
-    possrcs[1,1] = div( nx, 4, RoundUp)
-    possrcs[2,1] = div(2nx, 4, RoundUp)
-    possrcs[3,1] = div(3nx, 4, RoundUp)
+    possrcs = zeros(Int,1,1)
+    possrcs[1,1] = div(nx, 2, RoundUp)
     # source time functions
-    dt2srctf = zeros(nt,3)
-    dt2srctf[:,1] .= (dt^2) .* rickersource1D(times, t0, f0)
-    dt2srctf[:,2] .= (dt^2) .* rickersource1D(times, t0, f0)
-    dt2srctf[:,3] .= (dt^2) .* rickersource1D(times, t0, f0)
+    dt2srctf = zeros(nt,1)
+    dt2srctf[:,1] .= (dt^2) .* 1000 * rickersource1D(times, t0, f0)
 
     # benchmarking instead of actual computation
     if do_bench
@@ -192,8 +188,8 @@ end
             plot!(fill(lx - (halo * dx), 2), plims; color=:grey, linestyle=:dot, label=:none)
             # plot pressure
             plot!(0:dx:lx, pnew;
-                  ylim=plims, xlabel="lx", ylabel="pressure", label="pressure", color=:blue,
-                  title="1D Acoustic CPML\n(halo=$(halo), rcoef=$(rcoef))")
+                  ylim=plims, xlims=(0,lx), xlabel="lx", ylabel="pressure", label="pressure", color=:blue,
+                  title="1D Acoustic CPML\n(nx=$(nx), halo=$(halo), rcoef=$(rcoef))")
             frame(anim)
         end
     end
