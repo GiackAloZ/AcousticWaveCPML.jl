@@ -2,8 +2,6 @@ using Plots, Plots.Measures
 using BenchmarkTools
 using Printf
 
-default(size=(1000, 600), framestyle=:box,grid=false,margin=20pt)
-
 import ..AcousticWaveCPML: DOCS_FLD, rickersource1D, calc_Kab_CPML
 
 @views function update_ψ!(ψ_l, ψ_r, pcur,
@@ -155,10 +153,12 @@ end
         return nothing
     end
 
-    # create results folders
     if do_vis
         # Disable interactive visualization
         ENV["GKSwstype"]="nul"
+        # Set default plot values
+        default(size=(1000, 600), framestyle=:box,grid=false,margin=20pt)
+        # Create results folders if not present
         mkpath(DOCS_FLD)
     end
 
