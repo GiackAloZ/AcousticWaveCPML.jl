@@ -1,54 +1,34 @@
-include("solvers/acoustic_2D.jl")
+using AcousticWaveCPML
+using AcousticWaveCPML.Acoustic2D
 
-function run_simple()
+function run_center()
     # simple constant velocity model
-    nx, ny = 211, 211
-    vel = 2000.0 .* ones(Float64, nx, ny)
-    lx = (nx-1) * 10.0
-    ly = (ny-2) * 10.0
-    nt = 1000
-    # one source in the center
-    possrcs = zeros(Int,1,2)
-    possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp)]
+    nx = ny = 200                           # grid size
+    lx = ly = 2000.0                        # model sizes [m]
+    vel = 2000.0 .* ones(Float64, nx, ny)   # velocity model [m/s]
+    lt = 2.0                                # final time [s]
+    # sources
+    f0 = 10.0                               # source dominating frequency [Hz]
+    t0 = 4 / f0                             # source activation time [s]
+    stf = rickersource1D                    # first derivative of gaussian
+    possrcs = zeros(1,2)
+    possrcs[1,:] .= [lx/2, ly/2]
+    srcs = Sources(possrcs, [t0], [stf], f0)
+    # receivers
+    posrecs = zeros(2,2)
+    posrecs[1,:] .= [lx/2,  2ly/3]
+    posrecs[2,:] .= [2lx/3, 2ly/3]
+    recs = Receivers(posrecs)
 
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=0, do_vis=true, gif_name="acoustic2D_center_halo0", freetop=false, threshold=0.001)
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_center_halo5", freetop=false, threshold=0.001)
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.001)
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.001)
-
-end
-
-function run_gradient_multi()
-    # gradient velocity model
-    nx, ny = 211, 121
-    vel = zeros(Float64, nx, ny);
-    for i=1:nx
-        for j=1:ny
-            vel[i,j] = 2000.0 + 12.0*(j-1)
-        end
-    end
-    # constant after some depth
-    bigv = vel[1,ny-40]
-    vel[:,ny-40:end] .= bigv
-    lx = (nx-1) * 10.0
-    ly = (ny-2) * 10.0
-    nt = 1500
-
-    # 6 equidistant sources on top
-    possrcs = zeros(Int,6,2)
-    possrcs[1,:] = [div(3nx, 11, RoundUp), 3]
-    possrcs[2,:] = [div(4nx, 11, RoundUp), 3]
-    possrcs[3,:] = [div(5nx, 11, RoundUp), 3]
-    possrcs[4,:] = [div(6nx, 11, RoundUp), 3]
-    possrcs[5,:] = [div(7nx, 11, RoundUp), 3]
-    possrcs[6,:] = [div(8nx, 11, RoundUp), 3]
-
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=0, do_vis=true, gif_name="acoustic2D_gradient_halo0")
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=5, rcoef=0.01, do_vis=true, gif_name="acoustic2D_gradient_halo5")
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=10, rcoef=0.001, do_vis=true, gif_name="acoustic2D_gradient_halo10")
-    acoustic2D(lx, ly, nt, vel, possrcs; halo=20, rcoef=0.0001, do_vis=true, gif_name="acoustic2D_gradient_halo20")
+    solve2D(lx, ly, lt, vel, srcs, recs;
+            halo=0, do_vis=true, nvis=20, gif_name="acoustic2D_center_halo0", freetop=false, threshold=0.001, plims=(-2e-8,2e-8))
+    solve2D(lx, ly, lt, vel, srcs, recs;
+            halo=5, rcoef=0.01, do_vis=true, nvis=20, gif_name="acoustic2D_center_halo5", freetop=false, threshold=0.001, plims=(-2e-8,2e-8))
+    solve2D(lx, ly, lt, vel, srcs, recs;
+            halo=10, rcoef=0.001, do_vis=true, nvis=20, gif_name="acoustic2D_center_halo10", freetop=false, threshold=0.001, plims=(-2e-8,2e-8))
+    solve2D(lx, ly, lt, vel, srcs, recs;
+            halo=20, rcoef=0.0001, do_vis=true, nvis=20, gif_name="acoustic2D_center_halo20", freetop=false, threshold=0.001, plims=(-2e-8,2e-8))
 
 end
 
-run_simple()
-run_gradient_multi()
+run_center()

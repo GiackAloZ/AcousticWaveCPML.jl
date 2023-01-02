@@ -6,6 +6,8 @@ module AcousticWaveCPML
     DOCS_FLD = joinpath(dirname(@__DIR__), "simulations")
     TMP_FLD = joinpath(DOCS_FLD, "tmp")
 
+    export Sources, Receivers, gaussource1D, rickersource1D
+
     # Utilites functions
     include("utils.jl")
 

@@ -31,8 +31,11 @@ function calc_Kab_CPML(halo::Integer,
         error("Wrong onwhere parameter!")
     end
 
-    # distance from first non-CPML node
-    dist = LinRange(1-shift, Kab_size-shift, Kab_size)
+    # distance from edge node
+    dist = collect(LinRange(0-shift, Kab_size-shift-1, Kab_size))
+    if onwhere == "halfgrd"
+        dist[1] = 0
+    end
     normdist_left = reverse(dist) ./ halo
     normdist_right = dist ./ halo
 
@@ -53,17 +56,8 @@ function calc_Kab_CPML(halo::Integer,
     return a_left, a_right, b_K_left, b_K_right
 end
 
-"""
-    gaussource1D( t::Vector{<:Real}, t0::Real, f0::Real )
-
-Gaussian source time function for `t` time array, `t0` activation time, `f0` dominating frequency.
-"""
-function gaussource1D( t::Vector{<:Real}, t0::Real, f0::Real )
-    # boh = f0 .* (t-t0)
-    # source = -8.0*boh.*exp( -boh.^2/(4.0*f0)^2 )
-    boh= pi.*f0.*(t.-t0)
-    source = -boh.*exp.( -boh.^2 )    
-    return source
+function gaussource1D(t::Real, t0::Real, f0::Real)
+    return (t-t0) * exp(-((pi * f0 * (t - t0))^2))
 end
 
 
@@ -72,10 +66,8 @@ end
 
 Ricker source time function for `t` time array, `t0` activation time, `f0` dominating frequency.
 """
-function rickersource1D(t::Vector{<:Real}, t0::Real, f0::Real)    
-    b = (pi*f0*(t.-t0)).^2
-    w = (1.0.-2.0.*b).*exp.(.-b)
-    return w
+function rickersource1D(t::Real, t0::Real, f0::Real)
+    return (1 - 2 * (pi * f0 * (t - t0))^2) * exp(-((pi * f0 * (t - t0))^2))
 end
 
 """
@@ -94,3 +86,56 @@ function check_trial(trial::BenchmarkTools.Trial, confidence=0.95, range=0.05)
     tol_left, tol_right = (m - m*range, m + m*range)
     return ci_left >= tol_left && ci_right <= tol_right, (ci_left / 1e9, ci_right / 1e9), (tol_left / 1e9, tol_right / 1e9), m / 1e9
 end
+
+"""
+Type representing a multi-source configuration for a wave propagation shot.
+"""
+struct Sources
+    n::Integer
+    positions::Matrix{<:Real}
+    t0s::Vector{<:Real}
+    srctfs::Vector{<:Function}
+    freqdomain::Real
+
+    @doc """
+        Sources(
+            positions::Matrix{<:Real},
+        t0s::Vector{<:Real},
+        srctfs::Vector{<:Function},
+        freqdomain::Real
+        )
+
+    Create a single shot wave propagation source configuration from source positions, time-functions and a frequency domain.
+    """
+    function Sources(
+        positions::Matrix{<:Real},
+        t0s::Vector{<:Real},
+        srctfs::Vector{<:Function},
+        freqdomain::Real
+    )
+        @assert size(positions, 1) > 0 "There must be at least one source!"
+        @assert size(positions, 1) == length(t0s) == length(srctfs) "Number of sources do not match between positions and time-functions!"
+        new(size(positions, 1), positions, t0s, srctfs, freqdomain)
+    end
+end
+
+"""
+Type representing a multi-receiver configuration for a wave propagation shot.
+"""
+mutable struct Receivers
+    n::Integer
+    positions::Matrix{<:Real}
+    seismograms::Matrix{<:Real}
+
+    @doc """
+        Receivers(positions::Matrix{<:Int})
+
+    Create a single shot wave propagation receivers configuration from receivers positions.
+    """
+    function Receivers(positions::Matrix{<:Real})
+        @assert size(positions, 1) > 0 "There must be at least one receiver!"
+        new(size(positions, 1), positions, zeros(Float64, (0,0)))
+    end
+end
+
+
