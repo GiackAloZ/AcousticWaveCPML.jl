@@ -2,7 +2,7 @@ using Plots, Plots.Measures
 using BenchmarkTools
 using Printf
 
-import ..AcousticWaveCPML: DOCS_FLD, rickersource1D, calc_Kab_CPML, check_trial
+import ..AcousticWaveCPML: DOCS_FLD, calc_Kab_CPML, check_trial, Sources, Receivers
 
 @parallel_indices (i,j) function update_ψ_x!(ψ_x_l, ψ_x_r, pcur,
                                              halo, _dx, nx,
