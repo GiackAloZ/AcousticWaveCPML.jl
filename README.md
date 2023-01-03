@@ -160,9 +160,9 @@ For the 1D simulations, we show a simple constant velocity model with 201 grid p
 |                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 5       |
-![1Dcpmlhalo0](./simulations/acoustic1D_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic1D_halo5.gif)
+![1Dcpmlhalo0](./simulations/acoustic1D_center_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic1D_center_halo5.gif)
 | CPML layers = 10            |  CPML layers = 20       |
-![1Dcpmlhalo10](./simulations/acoustic1D_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic1D_halo20.gif)
+![1Dcpmlhalo10](./simulations/acoustic1D_center_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic1D_center_halo20.gif)
 
 We can see that without CPML layers, the wave gets reflected by the boundaries. Starting to add CPML layers, the wave gets absorbed by the boundaries, the more layers we use the less spurious oscillations we get back to the source.
 
@@ -177,9 +177,9 @@ We have also plotted a quantitative measure of the maximum absolute pressure val
 |                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 5       |
-![1Dcpmlhalo0](./simulations/acoustic2D_center_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_center_halo5.gif)
+![1Dcpmlhalo0](./simulations/acoustic2D_xPU_center_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_xPU_center_halo5.gif)
 | CPML layers = 10            |  CPML layers = 20       |
-![1Dcpmlhalo10](./simulations/acoustic2D_center_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_center_halo20.gif)
+![1Dcpmlhalo10](./simulations/acoustic2D_xPU_center_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_xPU_center_halo20.gif)
 
 We can see that, as in the 1D case, adding more layers helps with reducing the amplitude of the reflected waves.
 
@@ -190,9 +190,9 @@ In this simulation we wanted to tackle a non-constant velocity model, but still 
 |                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 5       |
-![1Dcpmlhalo0](./simulations/acoustic2D_gradient_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_gradient_halo5.gif)
+![1Dcpmlhalo0](./simulations/acoustic2D_xPU_gradient_freetop_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_xPU_gradient_freetop_halo5.gif)
 | CPML layers = 10            |  CPML layers = 20       |
-![1Dcpmlhalo10](./simulations/acoustic2D_gradient_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_gradient_halo20.gif)
+![1Dcpmlhalo10](./simulations/acoustic2D_xPU_gradient_freetop_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_xPU_gradient_freetop_halo20.gif)
 
 In this case we see that with 10 CPML layers we almost completely absorb the main wavefront (can you see a bit of it coming back to the top?), but the maximum absolute pressure for 20 CPML layers decays much quicker.
 
@@ -203,7 +203,7 @@ Here we investigated a complex velocity model from [[3](#references)] to see how
 |                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 20       |
-![1Dcpmlhalo0](./simulations/acoustic2D_complex_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_complex_halo20.gif)
+![1Dcpmlhalo0](./simulations/acoustic2D_xPU_complex_freetop_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_xPU_complex_freetop_halo20.gif)
 
 We compare the models with and without CPML layers and see that we get quite good results: the waves are mostly absorbed and the maximum absolute pressure value decreases.
 

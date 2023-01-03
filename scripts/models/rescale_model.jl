@@ -25,9 +25,6 @@ function rescalemod(nx,ny,nz;
   
     res = h5read(flnamedset[1],flnamedset[2])
 
-    @show size(res)
-    # (70, 143, 81)
-
     nxorig,nyorig,nzorig = size(res)
 
     x = LinRange(1.0, nxorig, nx)

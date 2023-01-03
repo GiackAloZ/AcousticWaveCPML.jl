@@ -3,15 +3,18 @@ module Acoustic1D
     @doc raw"""
         solve1D(
             lx::Real,
-            nt::Integer,
-            vel::Vector{<:Real};
+            lt::Real,
+            vel::Vector{<:Real},
+            srcs::Sources,
+            recs::Receivers;
             halo::Integer = 20,
             rcoef::Real = 0.0001,
-            do_vis::Bool = true,
+            ppw::Real = 10.0,
             do_bench::Bool = false,
-            nvis::Integer = 2,
+            do_vis::Bool = false,
+            nvis::Integer = 5,
             gif_name::String = "acoustic1D",
-            plims::Vector{<:Real} = [-1e-1, 1e-1]
+            plims::Tuple{<:Real, <:Real} = (-1.0, 1.0)
         )
 
     Compute `nt` timesteps of the acoustic 1D wave equation with CPML boundary conditions on a model with size `lx` meters,

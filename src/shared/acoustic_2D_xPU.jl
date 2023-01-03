@@ -305,7 +305,7 @@ end
         # Disable interactive visualization
         ENV["GKSwstype"]="nul"
         # Set default plot values
-        default(size=(1400, 1400), framestyle=:box,grid=false,margin=20pt)
+        default(size=(1400, 1400), framestyle=:box, grid=false, margin=20pt, legendfontsize=14, labelfontsize=14)
         # Create results folders if not present
         mkpath(DOCS_FLD)
         # Create animation object
@@ -344,21 +344,24 @@ end
         if do_vis && (it % nvis == 0)
             # velocity model heatmap
             velview = (((copy(vel) .- minimum(vel)) ./ (maximum(vel) - minimum(vel)))) .* (plims[2] - plims[1]) .+ plims[1]
-            p1 = heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal)
+            p1 = heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal, colorbar=false)
             # pressure heatmap
             pview = Data.Array(pcur)
+            # print iteration values
             maxabsp = @sprintf "%e" maximum(abs.(pview))
             @show it*dt, it, maxabsp
+            # threshold values
             pview[(pview .> plims[1] * threshold) .& (pview .< plims[2] * threshold)] .= NaN
+            # heatmap
             heatmap!(0:dx:lx, 0:dy:ly, pview';
-                  xlims=(0,lx),ylims=(0,ly), clims=plims, aspect_ratio=:equal,
-                  xlabel="lx [m]", ylabel="ly [m]", clabel="pressure", c=:diverging_bwr_20_95_c54_n256,
-                  title="Pressure [2D xPU Acoustic CPML]\n(nx=$(nx), ny=$(ny), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), maxabsp=$(maxabsp)"
+                  xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
+                  xlabel="lx [m]", ylabel="ly [m]", clabel="pressure", c=:diverging_bwr_20_95_c54_n256, colorbar=false,
+                  title="Pressure [2D xPU Acoustic CPML]\n(nx=$(nx), ny=$(ny), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), time=$(round(it*dt, digits=2)) [sec], maxabsp=$(maxabsp) [Pas]"
             )
             # sources positions
-            scatter!((possrcs[:,1].-1) .* dx, (possrcs[:,2].-1) .* dy; markershape=:star, markersize=5, color=:red, label="sources")
+            scatter!((possrcs[:,1].-1) .* dx, (possrcs[:,2].-1) .* dy; markersize=10, markerstrokewidth=0, markershape=:star, color=:red, label="sources")
             # receivers positions
-            scatter!((posrecs[:,1].-1) .* dx, (posrecs[:,2].-1) .* dy; markershape=:diamond, markersize=5, color=:blue, label="receivers")
+            scatter!((posrecs[:,1].-1) .* dx, (posrecs[:,2].-1) .* dy; markersize=10, markerstrokewidth=0, markershape=:dtriangle, color=:blue, label="receivers")
             
             # CPML boundaries
             if freetop
@@ -377,7 +380,7 @@ end
             # traces plot
             tracesview = Data.Array(traces)
             p2 = plot(times[1:it], tracesview[1:it, :];
-                ylims=plims,
+                ylims=(plims[1], plims[2]),
                 xlims=(times[1], times[end]),
                 xlabel="time [sec]",
                 ylabel="pressure [Pas]",
@@ -431,7 +434,7 @@ end
     # SAVE RESULTS
     ###################################################
     if do_vis
-        gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"); fps=10)
+        gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"); fps=5)
     end
     # save seismograms traces
     recs.seismograms = Data.Array(traces)
