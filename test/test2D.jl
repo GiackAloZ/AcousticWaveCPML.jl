@@ -1,4 +1,4 @@
-using Test, ReferenceTests
+using Test, ReferenceTests, BSON
 using DSP, NumericalIntegration, LinearAlgebra
 
 using AcousticWaveCPML
@@ -6,6 +6,9 @@ using AcousticWaveCPML.Acoustic2D
 import AcousticWaveCPML.Acoustic2D: update_ψ!
 
 REF_FLD = joinpath(@__DIR__, "references")
+
+comp(d1, d2) = keys(d1)==keys(d2) &&
+    all([ v1 ≈ v2 for (v1,v2) in zip(values(d1), values(d2))])
 
 @testset "Test update_ψ!" begin
     nx = ny = 101
@@ -58,7 +61,7 @@ end
     posrecs[1,:] .= [lx/4, ly/2]
     recs = Receivers(posrecs)
 
-    # numberical solution
+    # Numerical solution
     solve2D(lx, ly, lt, vel, srcs, recs; halo=0, freetop=false)
     numerical_trace = recs.seismograms[:,1]
 
@@ -93,7 +96,7 @@ end
     lx = ly = 10.0                          # model sizes [m]
     c0 = 1.0
     vel = c0 .* ones(Float64, nx, ny)       # velocity model [m/s]
-    lt = 10.0                               # final time [s]
+    lt = 20.0                               # final time [s]
     # sources
     f0 = 1.0                                # source dominating frequency [Hz]
     t0 = 4 / f0                             # source activation time [s]
@@ -106,7 +109,7 @@ end
     posrecs[1,:] .= [lx/4, ly/2]
     recs = Receivers(posrecs)
 
-    # numberical solution
+    # Numerical solution
     solve2D(lx, ly, lt, vel, srcs, recs; freetop=false, halo=20, rcoef=0.0001)
     numerical_trace = recs.seismograms[:,1]
 
@@ -157,7 +160,7 @@ end
     pend = solve2D(lx, ly, lt, vel, srcs, recs;
             halo=20, rcoef=0.0001, do_vis=false, freetop=false)
 
-    @test_reference joinpath(REF_FLD, "acoustic2D_center_halo20.txt") pend
+    @test_reference joinpath(REF_FLD, "acoustic2D_center_halo20.bson") Dict(:pend=>pend) by=comp
 end
 
 @testset "Test reference constant velocity freetop" begin
@@ -182,7 +185,7 @@ end
     pend = solve2D(lx, ly, lt, vel, srcs, recs;
             halo=20, rcoef=0.0001, do_vis=false, freetop=true)
 
-    @test_reference joinpath(REF_FLD, "acoustic2D_center_freetop_halo20.txt") pend
+    @test_reference joinpath(REF_FLD, "acoustic2D_center_freetop_halo20.bson") Dict(:pend=>pend) by=comp
 end
 
 @testset "Test reference gradient velocity freetop" begin
@@ -221,5 +224,5 @@ end
     pend = solve2D(lx, ly, lt, vel, srcs, recs;
             halo=20, rcoef=0.0001, do_vis=false, freetop=true)
 
-    @test_reference joinpath(REF_FLD, "acoustic2D_gradient_freetop_halo20.txt") pend
+    @test_reference joinpath(REF_FLD, "acoustic2D_gradient_freetop_halo20.bson") Dict(:pend=>pend) by=comp
 end

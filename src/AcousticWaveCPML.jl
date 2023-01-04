@@ -17,12 +17,20 @@ module AcousticWaveCPML
     # 2D acoustic solver module
     include("Acoustic2D.jl")
 
-    # xPU 2D acoustic solver module using Threads
+    # # xPU 2D acoustic solver module using Threads
     ParallelStencil.@reset_parallel_stencil()
     include("Acoustic2D_Threads.jl")
 
-    # xPU 2D acoustic solver module using CUDA
+    # # multixPU 2D acoustic solver module using Threads
+    ParallelStencil.@reset_parallel_stencil()
+    include("Acoustic2Dmulti_Threads.jl")
+
+    # # xPU 2D acoustic solver module using CUDA
     ParallelStencil.@reset_parallel_stencil()
     include("Acoustic2D_CUDA.jl")
+
+    # multixPU 2D acoustic solver module using CUDA
+    ParallelStencil.@reset_parallel_stencil()
+    include("Acoustic2Dmulti_CUDA.jl")
 
 end # module AcousticWaveCPML
