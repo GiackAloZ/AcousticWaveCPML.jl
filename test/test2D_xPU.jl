@@ -35,7 +35,7 @@ comp(d1, d2) = keys(d1)==keys(d2) &&
     # Analytical solution
     dx = lx / (nx-1)
     dy = ly / (ny-1)
-    dt = sqrt(2) / (c0 * (1/dx + 1/dy))
+    dt = sqrt(2) / (c0 * (1/dx + 1/dy)) / 2
     nt = ceil(Int, lt / dt)
     times = collect(range(0.0, step=dt, length=nt+1))
     dist = norm(possrcs[1,:] .- posrecs[1,:])
@@ -83,7 +83,7 @@ end
     # Analytical solution
     dx = lx / (nx-1)
     dy = ly / (ny-1)
-    dt = sqrt(2) / (c0 * (1/dx + 1/dy))
+    dt = sqrt(2) / (c0 * (1/dx + 1/dy)) / 2
     nt = ceil(Int, lt / dt)
     times = collect(range(0.0, step=dt, length=nt+1))
     dist = norm(possrcs[1,:] .- posrecs[1,:])

@@ -29,7 +29,7 @@ using AcousticWaveCPML.Acoustic1D
 
     # Analytical solution
     dx = lx / (nx-1)
-    dt = dx / c0
+    dt = dx / c0 / 2
     nt = ceil(Int, lt / dt)
     times = collect(range(0.0, step=dt, length=nt+1))
     dist = norm(possrcs[1,:] .- posrecs[1,:])
@@ -76,7 +76,7 @@ end
 
     # Analytical solution
     dx = lx / (nx-1)
-    dt = dx / c0
+    dt = dx / c0 / 2
     nt = ceil(Int, lt / dt)
     times = collect(range(0.0, step=dt, length=nt+1))
     dist = norm(possrcs[1,:] .- posrecs[1,:])

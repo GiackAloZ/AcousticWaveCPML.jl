@@ -217,7 +217,7 @@ end
     # Derived physics
     vel_max = max_g(vel)                            # maximum velocity [m/s]
     # Other numerics
-    dt = sqrt(2) / (vel_max * (1/dx + 1/dy))        # maximum possible timestep size (CFL stability condition) [s]
+    dt = sqrt(2) / (vel_max * (1/dx + 1/dy))/2      # maximum possible timestep size (CFL stability condition) [s]
     nt = ceil(Int, lt / dt)                         # number of timesteps
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # CPML numerics

@@ -18,8 +18,8 @@ function runtests()
     run(`$exename -O3 --startup-file=no --check-bounds=yes $(joinpath(testdir, "test2D_multixPU.jl"))`)
     printstyled("Testing 3D AcousticWaveCPML\n"; bold=true, color=:white)
     run(`$exename -O3 --startup-file=no --check-bounds=yes $(joinpath(testdir, "test3D.jl"))`)
-    # printstyled("Testing 3D xPU AcousticWaveCPML\n"; bold=true, color=:white)
-    # run(`$exename -O3 --startup-file=no --check-bounds=yes $(joinpath(testdir, "test3D_xPU.jl"))`)
+    printstyled("Testing 3D xPU AcousticWaveCPML\n"; bold=true, color=:white)
+    run(`$exename -O3 --startup-file=no --check-bounds=yes $(joinpath(testdir, "test3D_xPU.jl"))`)
 
     return 0
 end

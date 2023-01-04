@@ -35,11 +35,11 @@ end
 function run_gradient()
     # gradient velocity model
     # grid sizes
-    nx, ny, nz = 102, 102, 101
+    nx, ny, nz = 121, 121, 81
     # model sizes [m]
-    lx = (nx-1) * 10.0
-    ly = (ny-1) * 10.0
-    lz = (nz-1) * 10.0
+    lx = 1000
+    ly = 1000
+    lz = 800
     vel = zeros(Float64, nx, ny, nz)
     for i=1:nx
         for j=1:ny
@@ -54,12 +54,15 @@ function run_gradient()
 
     lt = 2.0                                     # final time [s]
     # sources
-    f0 = 10.0                                    # source dominating frequency [Hz]
+    f0 = 15.0                                    # source dominating frequency [Hz]
     t0 = 4 / f0                                  # source activation time [s]
     stf = rickersource1D                         # second derivative of gaussian
-    possrcs = zeros(1,3)
-    possrcs[1,:] .= [lx/2, ly/2, lz/2]
-    srcs = Sources(possrcs, [t0], [stf], f0)
+    possrcs = zeros(4,3)
+    possrcs[1,:] .= [lx/4, 100, lz/2]
+    possrcs[2,:] .= [3lx/4, 100, lz/2]
+    possrcs[3,:] .= [lx/2, 100, 2lz/5]
+    possrcs[4,:] .= [lx/2, 100, 3lz/5]
+    srcs = Sources(possrcs, fill(t0, 4), fill(stf, 4), f0)
     # receivers
     posrecs = zeros(2,3)
     posrecs[1,:] .= [lx/2,  2ly/3, lz/2]
@@ -67,9 +70,7 @@ function run_gradient()
     recs = Receivers(posrecs)
 
     solve3D(lx, ly, lz, lt, vel, srcs, recs;
-            halo=0, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_gradient_freetop_slice_halo0", save_name="acoustic3D_gradient_halo0", freetop=true, threshold=0.001, plims=[-1e-10,1e-10])
-    # solve3D(lx, ly, lz, lt, vel, srcs, recs;
-    #         halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_gradient_freetop_slice_halo20", save_name="acoustic3D_gradient_halo20", freetop=true, threshold=0.001, plims=[-1e-10,1e-10])
+            halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_gradient_freetop_slice_halo20", save_name="acoustic3D_gradient_freetop_halo20", freetop=true, threshold=0.01, plims=[-1e-10,1e-10])
 end
 
 # run_center()

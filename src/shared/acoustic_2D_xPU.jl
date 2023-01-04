@@ -160,7 +160,7 @@ end
     # Derived numerics
     dx = lx / (nx-1)                                # grid step size [m]
     dy = ly / (ny-1)                                # grid step size [m]
-    dt = sqrt(2) / (vel_max * (1/dx + 1/dy))        # maximum possible timestep size (CFL stability condition) [s]
+    dt = sqrt(2) / (vel_max * (1/dx + 1/dy))/2      # maximum possible timestep size (CFL stability condition) [s]
     nt = ceil(Int, lt / dt)                         # number of timesteps
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # CPML numerics
@@ -347,7 +347,7 @@ end
             velview = (((copy(vel) .- minimum(vel)) ./ (maximum(vel) - minimum(vel)))) .* (plims[2] - plims[1]) .+ plims[1]
             p1 = heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal, colorbar=false)
             # pressure heatmap
-            pview = Data.Array(pcur)
+            pview = Array(pcur)
             # print iteration values
             maxabsp = @sprintf "%e" maximum(abs.(pview))
             @show it*dt, it, maxabsp
@@ -379,7 +379,7 @@ end
             yflip!(true)
 
             # traces plot
-            tracesview = Data.Array(traces)
+            tracesview = Array(traces)
             p2 = plot(times[1:it], tracesview[1:it, :];
                 ylims=(plims[1], plims[2]),
                 xlims=(times[1], times[end]),
@@ -438,8 +438,8 @@ end
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"); fps=5)
     end
     # save seismograms traces
-    recs.seismograms = Data.Array(traces)
+    recs.seismograms = Array(traces)
     ###################################################
 
-    return Data.Array(pcur)
+    return Array(pcur)
 end

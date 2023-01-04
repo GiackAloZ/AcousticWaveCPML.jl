@@ -112,7 +112,7 @@ end
     nx            = length(vel)                     # number of grid points
     # Derived numerics
     dx = lx / (nx-1)                                # grid step size [m]
-    dt = dx / vel_max                               # maximum possible timestep size (CFL stability condition) [s]
+    dt = dx / vel_max / 2                           # maximum possible timestep size (CFL stability condition) [s]
     nt = ceil(Int, lt / dt)                         # number of timesteps
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
     # CPML numerics
