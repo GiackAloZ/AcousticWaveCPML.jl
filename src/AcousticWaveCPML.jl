@@ -32,6 +32,10 @@ module AcousticWaveCPML
     ParallelStencil.@reset_parallel_stencil()
     include("Acoustic3D_Threads.jl")
 
+    # multixPU 3D acoustic solver module using Threads
+    ParallelStencil.@reset_parallel_stencil()
+    include("Acoustic3Dmulti_Threads.jl")
+
     # xPU 3D acoustic solver module using CUDA
     ParallelStencil.@reset_parallel_stencil()
     include("Acoustic3D_CUDA.jl")
@@ -43,5 +47,9 @@ module AcousticWaveCPML
     # multixPU 2D acoustic solver module using CUDA
     ParallelStencil.@reset_parallel_stencil()
     include("Acoustic2Dmulti_CUDA.jl")
+
+    # multixPU 3D acoustic solver module using CUDA
+    ParallelStencil.@reset_parallel_stencil()
+    include("Acoustic3Dmulti_CUDA.jl")
 
 end # module AcousticWaveCPML

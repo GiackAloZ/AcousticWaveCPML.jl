@@ -5,39 +5,57 @@ using HDF5
 
 import ..AcousticWaveCPML: DOCS_FLD, TMP_FLD, calc_Kab_CPML, check_trial, Sources, Receivers
 
-@parallel_indices (i,j,k) function update_ψ_x!(ψ_x_l, ψ_x_r, pcur,
-                                               halo, _dx, nx,
-                                               a_x_hl, a_x_hr,
-                                               b_K_x_hl, b_K_x_hr)
-    ii = i + nx - halo - 2  # shift for right boundary pressure indices
-    # left boundary
+max_g(A) = (max_l = maximum(A); MPI.Allreduce(max_l, MPI.MAX, MPI.COMM_WORLD))
+
+@parallel_indices (i,j,k) function update_ψ_x_l!(ψ_x_l, pcur,
+                                                 halo, _dx, nx,
+                                                 a_x_hl, b_K_x_hl)
     ψ_x_l[i,j,k] = b_K_x_hl[i] * ψ_x_l[i,j,k] + a_x_hl[i]*(pcur[ i+1,j,k] - pcur[ i,j,k])*_dx
+    return nothing
+end
+
+@parallel_indices (i,j,k) function update_ψ_x_r!(ψ_x_r, pcur,
+                                                 halo, _dx, nx,
+                                                 a_x_hr, b_K_x_hr)
+    ii = i + nx - halo - 2  # shift for right boundary pressure indices
     # right boundary
     ψ_x_r[i,j,k] = b_K_x_hr[i] * ψ_x_r[i,j,k] + a_x_hr[i]*(pcur[ii+1,j,k] - pcur[ii,j,k])*_dx
 
     return nothing
 end
 
-@parallel_indices (i,j,k) function update_ψ_y!(ψ_y_l, ψ_y_r, pcur,
-                                               halo, _dy, ny,
-                                               a_y_hl, a_y_hr,
-                                               b_K_y_hl, b_K_y_hr)
-    jj = j + ny - halo - 2  # shift for bottom boundary pressure indices
+@parallel_indices (i,j,k) function update_ψ_y_l!(ψ_y_l, pcur,
+                                                 halo, _dy, ny,
+                                                 a_y_hl, b_K_y_hl)
     # top boundary
     ψ_y_l[i,j,k] = b_K_y_hl[j] * ψ_y_l[i,j,k] + a_y_hl[j]*(pcur[i, j+1,k] - pcur[i, j,k])*_dy
+
+    return nothing
+end
+
+@parallel_indices (i,j,k) function update_ψ_y_r!(ψ_y_r, pcur,
+                                                 halo, _dy, ny,
+                                                 a_y_hr, b_K_y_hr)
+    jj = j + ny - halo - 2  # shift for bottom boundary pressure indices
     # bottom boundary
     ψ_y_r[i,j,k] = b_K_y_hr[j] * ψ_y_r[i,j,k] + a_y_hr[j]*(pcur[i,jj+1,k] - pcur[i,jj,k])*_dy
 
     return nothing
 end
 
-@parallel_indices (i,j,k) function update_ψ_z!(ψ_z_l, ψ_z_r, pcur,
-                                               halo, _dz, nz,
-                                               a_z_hl, a_z_hr,
-                                               b_K_z_hl, b_K_z_hr)
-    kk = k + nz - halo - 2  # shift for bottom boundary pressure indices
+@parallel_indices (i,j,k) function update_ψ_z_l!(ψ_z_l, pcur,
+                                                 halo, _dz, nz,
+                                                 a_z_hl, b_K_z_hl)
     # front boundary
     ψ_z_l[i,j,k] = b_K_z_hl[k] * ψ_z_l[i,j,k] + a_z_hl[k]*(pcur[i,j, k+1] - pcur[i,j, k])*_dz
+
+    return nothing
+end
+
+@parallel_indices (i,j,k) function update_ψ_z_r!(ψ_z_r, pcur,
+                                                 halo, _dz, nz,
+                                                 a_z_hr, b_K_z_hr)
+    kk = k + nz - halo - 2  # shift for back boundary pressure indices
     # back boundary
     ψ_z_r[i,j,k] = b_K_z_hr[k] * ψ_z_r[i,j,k] + a_z_hr[k]*(pcur[i,j,kk+1] - pcur[i,j,kk])*_dz
 
@@ -45,78 +63,93 @@ end
 end
 
 @parallel_indices (i,j,k) function update_p!(pold, pcur, pnew, halo, fact,
-                                           _dx, _dx2, _dy, _dy2, _dz, _dz2, nx, ny, nz,
-                                           ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r,
-                                           ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r, ξ_z_l, ξ_z_r,
-                                           a_x_l, a_x_r, b_K_x_l, b_K_x_r,
-                                           a_y_l, a_y_r, b_K_y_l, b_K_y_r,
-                                           a_z_l, a_z_r, b_K_z_l, b_K_z_r)
-    # pressure derivatives in space
-    d2p_dx2 = (pcur[i+1,j,k] - 2.0*pcur[i,j,k] + pcur[i-1,j,k])*_dx2
-    d2p_dy2 = (pcur[i,j+1,k] - 2.0*pcur[i,j,k] + pcur[i,j-1,k])*_dy2
-    d2p_dz2 = (pcur[i,j,k+1] - 2.0*pcur[i,j,k] + pcur[i,j,k-1])*_dz2
+                                             _dx, _dx2, _dy, _dy2, _dz, _dz2, nx, ny, nz,
+                                             ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r,
+                                             ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r, ξ_z_l, ξ_z_r,
+                                             a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+                                             a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+                                             a_z_l, a_z_r, b_K_z_l, b_K_z_r,
+                                             ishift, jshift, kshift,
+                                             gnx, gny, gnz)
+    # check inside domain
+    if i >= 2 && i <= nx-1 && j >= 2 && j <= ny-1 && k >= 2 && k <= nz-1
+        # pressure derivatives in space
+        d2p_dx2 = (pcur[i+1,j,k] - 2.0*pcur[i,j,k] + pcur[i-1,j,k])*_dx2
+        d2p_dy2 = (pcur[i,j+1,k] - 2.0*pcur[i,j,k] + pcur[i,j-1,k])*_dy2
+        d2p_dz2 = (pcur[i,j,k+1] - 2.0*pcur[i,j,k] + pcur[i,j,k-1])*_dz2
 
-    damp = 0.0
-    # x boundaries
-    if i <= halo+1
-        # left boundary
-        dψ_x_dx = (ψ_x_l[i,j,k] - ψ_x_l[i-1,j,k])*_dx
-        ξ_x_l[i-1,j,k] = b_K_x_l[i-1] * ξ_x_l[i-1,j,k] + a_x_l[i-1] * (d2p_dx2 + dψ_x_dx)
-        damp += fact[i,j,k] * (dψ_x_dx + ξ_x_l[i-1,j,k])
-    elseif i >= nx - halo
-        # right boundary
-        ii = i - (nx - halo) + 2
-        dψ_x_dx = (ψ_x_r[ii,j,k] - ψ_x_r[ii-1,j,k])*_dx
-        ξ_x_r[ii-1,j,k] = b_K_x_r[ii-1] * ξ_x_r[ii-1,j,k] + a_x_r[ii-1] * (d2p_dx2 + dψ_x_dx)
-        damp += fact[i,j,k] * (dψ_x_dx + ξ_x_r[ii-1,j,k])
-    end
-    # y boundaries
-    if j <= halo+1
-        # top boundary
-        dψ_y_dy = (ψ_y_l[i,j,k] - ψ_y_l[i,j-1,k])*_dy
-        ξ_y_l[i,j-1,k] = b_K_y_l[j-1] * ξ_y_l[i,j-1,k] + a_y_l[j-1] * (d2p_dy2 + dψ_y_dy)
-        damp += fact[i,j,k] * (dψ_y_dy + ξ_y_l[i,j-1,k])
-    elseif j >= ny - halo
-        # bottom boundary
-        jj = j - (ny - halo) + 2
-        dψ_y_dy = (ψ_y_r[i,jj,k] - ψ_y_r[i,jj-1,k])*_dy
-        ξ_y_r[i,jj-1,k] = b_K_y_r[jj-1] * ξ_y_r[i,jj-1,k] + a_y_r[jj-1] * (d2p_dy2 + dψ_y_dy)
-        damp += fact[i,j,k] * (dψ_y_dy + ξ_y_r[i,jj-1,k])
-    end
-    # z boundaries
-    if k <= halo+1
-        # front boundary
-        dψ_z_dz = (ψ_z_l[i,j,k] - ψ_z_l[i,j,k-1])*_dz
-        ξ_z_l[i,j,k-1] = b_K_z_l[k-1] * ξ_z_l[i,j,k-1] + a_z_l[k-1] * (d2p_dz2 + dψ_z_dz)
-        damp += fact[i,j,k] * (dψ_z_dz + ξ_z_l[i,j,k-1])
-    elseif k >= nz - halo
-        # back boundary
-        kk = k - (nz - halo) + 2
-        dψ_z_dz = (ψ_z_r[i,j,kk] - ψ_z_r[i,j,kk-1])*_dz
-        ξ_z_r[i,j,kk-1] = b_K_z_r[kk-1] * ξ_z_r[i,j,kk-1] + a_z_r[kk-1] * (d2p_dz2 + dψ_z_dz)
-        damp += fact[i,j,k] * (dψ_z_dz + ξ_z_r[i,j,kk-1])
-    end
+        damp = 0.0
+        # x boundaries
+        if i + ishift <= halo+1
+            # left boundary
+            dψ_x_dx = (ψ_x_l[i,j,k] - ψ_x_l[i-1,j,k])*_dx
+            ξ_x_l[i-1,j,k] = b_K_x_l[i-1] * ξ_x_l[i-1,j,k] + a_x_l[i-1] * (d2p_dx2 + dψ_x_dx)
+            damp += fact[i,j,k] * (dψ_x_dx + ξ_x_l[i-1,j,k])
+        elseif i + ishift >= gnx - halo
+            # right boundary
+            ii = i - (nx - halo) + 2
+            dψ_x_dx = (ψ_x_r[ii,j,k] - ψ_x_r[ii-1,j,k])*_dx
+            ξ_x_r[ii-1,j,k] = b_K_x_r[ii-1] * ξ_x_r[ii-1,j,k] + a_x_r[ii-1] * (d2p_dx2 + dψ_x_dx)
+            damp += fact[i,j,k] * (dψ_x_dx + ξ_x_r[ii-1,j,k])
+        end
+        # y boundaries
+        if j + jshift <= halo+1
+            # left boundary
+            dψ_y_dy = (ψ_y_l[i,j,k] - ψ_y_l[i,j-1,k])*_dy
+            ξ_y_l[i,j-1,k] = b_K_y_l[j-1] * ξ_y_l[i,j-1,k] + a_y_l[j-1] * (d2p_dy2 + dψ_y_dy)
+            damp += fact[i,j,k] * (dψ_y_dy + ξ_y_l[i,j-1,k])
+        elseif j + jshift >= gny - halo
+            # right boundary
+            jj = j - (ny - halo) + 2
+            dψ_y_dy = (ψ_y_r[i,jj,k] - ψ_y_r[i,jj-1,k])*_dy
+            ξ_y_r[i,jj-1,k] = b_K_y_r[jj-1] * ξ_y_r[i,jj-1,k] + a_y_r[jj-1] * (d2p_dy2 + dψ_y_dy)
+            damp += fact[i,j,k] * (dψ_y_dy + ξ_y_r[i,jj-1,k])
+        end
+        # z boundaries
+        if k + kshift <= halo+1
+            # left boundary
+            dψ_z_dz = (ψ_z_l[i,j,k] - ψ_z_l[i,j,k-1])*_dz
+            ξ_z_l[i,j,k-1] = b_K_z_l[k-1] * ξ_z_l[i,j,k-1] + a_z_l[k-1] * (d2p_dz2 + dψ_z_dz)
+            damp += fact[i,j,k] * (dψ_z_dz + ξ_z_l[i,j,k-1])
+        elseif k + kshift >= gnz - halo
+            # right boundary
+            kk = k - (nz - halo) + 2
+            dψ_z_dz = (ψ_z_r[i,j,kk] - ψ_z_r[i,j,kk-1])*_dz
+            ξ_z_r[i,j,kk-1] = b_K_z_r[kk-1] * ξ_z_r[i,j,kk-1] + a_z_r[kk-1] * (d2p_dz2 + dψ_z_dz)
+            damp += fact[i,j,k] * (dψ_z_dz + ξ_z_r[i,j,kk-1])
+        end
 
-    # update pressure
-    pnew[i,j,k] = 2.0 * pcur[i,j,k] - pold[i,j,k] + fact[i,j,k] * (d2p_dx2 + d2p_dy2 + d2p_dz2) + damp
+        # update pressure
+        pnew[i,j,k] = 2.0 * pcur[i,j,k] - pold[i,j,k] + fact[i,j,k] * (d2p_dx2 + d2p_dy2 + d2p_dz2) + damp
+    end
 
     return nothing
 end
 
-@parallel_indices (is) function inject_sources!(pnew, dt2srctf, possrcs, it)
-    isrc = floor(Int, possrcs[is,1])
-    jsrc = floor(Int, possrcs[is,2])
-    zsrc = floor(Int, possrcs[is,3])
-    pnew[isrc,jsrc,zsrc] += dt2srctf[it,is]
+@parallel_indices (is) function inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, kshift, nx, ny, nz)
+    # Get local source positions from global ones
+    isrc = floor(Int, possrcs[is,1]) - ishift
+    jsrc = floor(Int, possrcs[is,2]) - jshift
+    ksrc = floor(Int, possrcs[is,3]) - kshift
+
+    # Check if source is inside local grid
+    if (1 <= isrc <= nx) && (1 <= jsrc <= ny) && (1 <= ksrc <= nz)
+        pnew[isrc,jsrc,ksrc] += dt2srctf[it,is]
+    end
 
     return nothing
 end
 
-@parallel_indices (ir) function record_receivers!(pnew, traces, posrecs, it)
-    irec = floor(Int, posrecs[ir,1])
-    jrec = floor(Int, posrecs[ir,2])
-    krec = floor(Int, posrecs[ir,3])
-    traces[it,ir] = pnew[irec,jrec,krec]
+@parallel_indices (ir) function record_receivers!(pnew, traces, posrecs, it, ishift, jshift, kshift, nx, ny, nz)
+    # Get local receiver position from global ones
+    irec = floor(Int, posrecs[ir,1]) - ishift
+    jrec = floor(Int, posrecs[ir,2]) - jshift
+    krec = floor(Int, posrecs[ir,3]) - kshift
+
+    # Check if receiver is inside local grid
+    if (1 <= irec <= nx) && (1 <= jrec <= ny) && (1 <= krec <= nz)
+        traces[it,ir] = pnew[irec,jrec,krec]
+    end
 
     return nothing
 end
@@ -130,48 +163,81 @@ end
     a_y_l, a_y_r, b_K_y_l, b_K_y_r,
     a_z_hl, a_z_hr, b_K_z_hl, b_K_z_hr,
     a_z_l, a_z_r, b_K_z_l, b_K_z_r,
-    possrcs, dt2srctf, posrecs, traces, it
+    possrcs, dt2srctf, posrecs, traces, it,
+    gnx, gny, gnz,
+    dims, coords, b_width
 )
     nx, ny, nz = size(pcur)
+    # compute shifting for global indexes
+    ishift = coords[1] * (nx-2)
+    jshift = coords[2] * (ny-2)
+    kshift = coords[3] * (nz-2)
 
     # update ψ arrays
-    @parallel_async (1:halo+1,1:ny,1:nz) update_ψ_x!(ψ_x_l, ψ_x_r, pcur,
-                                                     halo, _dx, nx,
-                                                     a_x_hl, a_x_hr,
-                                                     b_K_x_hl, b_K_x_hr)
-    @parallel_async (1:nx,1:halo+1,1:nz) update_ψ_y!(ψ_y_l, ψ_y_r, pcur,
-                                                     halo, _dy, ny,
-                                                     a_y_hl, a_y_hr,
-                                                     b_K_y_hl, b_K_y_hr)
-    @parallel_async (1:nx,1:ny,1:halo+1) update_ψ_z!(ψ_z_l, ψ_z_r, pcur,
-                                                     halo, _dz, nz,
-                                                     a_z_hl, a_z_hr,
-                                                     b_K_z_hl, b_K_z_hr)
+    if coords[1] == 0
+        @parallel_async (1:halo+1,1:ny,1:nz) update_ψ_x_l!(ψ_x_l, pcur,
+                                                           halo, _dx, nx,
+                                                           a_x_hl, b_K_x_hl)
+    end
+    if coords[1] == dims[1]-1
+        @parallel_async (1:halo+1,1:ny,1:nz) update_ψ_x_r!(ψ_x_r, pcur,
+                                                           halo, _dx, nx,
+                                                           a_x_hr, b_K_x_hr)
+    end
+    if coords[2] == 0
+        @parallel_async (1:nx,1:halo+1,1:nz) update_ψ_y_l!(ψ_y_l, pcur,
+                                                           halo, _dy, ny,
+                                                           a_y_hl, b_K_y_hl)
+    end
+    if coords[2] == dims[2]-1
+        @parallel_async (1:nx,1:halo+1,1:nz) update_ψ_y_r!(ψ_y_r, pcur,
+                                                           halo, _dy, ny,
+                                                           a_y_hr, b_K_y_hr)
+    end
+    if coords[3] == 0
+        @parallel_async (1:nx,1:ny,1:halo+1) update_ψ_z_l!(ψ_z_l, pcur,
+                                                           halo, _dz, nz,
+                                                           a_z_hl, b_K_z_hl)
+    end
+    if coords[3] == dims[3]-1
+        @parallel_async (1:nx,1:ny,1:halo+1) update_ψ_z_r!(ψ_z_r, pcur,
+                                                           halo, _dz, nz,
+                                                           a_z_hr, b_K_z_hr)
+    end
     @synchronize
 
-    # update presure and ξ arrays
-    @parallel (2:nx-1,2:ny-1,2:nz-1) update_p!(pold, pcur, pnew, halo, fact,
-                                               _dx, _dx2, _dy, _dy2, _dz, _dz2, nx, ny, nz,
-                                               ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r,
-                                               ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r, ξ_z_l, ξ_z_r,
-                                               a_x_l, a_x_r, b_K_x_l, b_K_x_r,
-                                               a_y_l, a_y_r, b_K_y_l, b_K_y_r,
-                                               a_z_l, a_z_r, b_K_z_l, b_K_z_r)
-    
+    # @hide_communication b_width begin
+         # update presure and ξ arrays
+        @parallel update_p!(pold, pcur, pnew, halo, fact,
+                            _dx, _dx2, _dy, _dy2, _dz, _dz2, nx, ny, nz,
+                            ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r, ψ_z_l, ψ_z_r,
+                            ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r, ξ_z_l, ξ_z_r,
+                            a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+                            a_y_l, a_y_r, b_K_y_l, b_K_y_r,
+                            a_z_l, a_z_r, b_K_z_l, b_K_z_r,
+                            ishift, jshift, kshift,
+                            gnx, gny, gnz)
+        # exchange new pressure
+        update_halo!(pnew)
+    # end
+
     # inject sources
-    @parallel (1:size(possrcs,1)) inject_sources!(pnew, dt2srctf, possrcs, it)
+    @parallel (1:size(possrcs,1)) inject_sources!(pnew, dt2srctf, possrcs, it, ishift, jshift, kshift, nx, ny, nz)
     # record receivers
-    @parallel (1:size(posrecs,1)) record_receivers!(pnew, traces, posrecs, it)
+    @parallel (1:size(posrecs,1)) record_receivers!(pnew, traces, posrecs, it, ishift, jshift, kshift, nx, ny, nz)
 
     return pcur, pnew, pold
 end
 
-@views function solve3D(
+@views function solve3D_multi(
     lx::Real,
     ly::Real,
     lz::Real,
     lt::Real,
-    vel::Array{<:Real, 3},
+    nx::Integer,
+    ny::Integer,
+    nz::Integer,
+    vel_func::Function,
     srcs::Sources,
     recs::Receivers;
     halo::Integer = 20,
@@ -183,24 +249,32 @@ end
     do_save::Bool = false,
     nvis::Integer = 5,
     nsave::Integer = 5,
-    gif_name::String = "acoustic3D_xPU_slice",
-    save_name::String = "acoustic3D_xPU",
+    gif_name::String = "acoustic3D_multixPU_slice",
+    save_name::String = "acoustic3D_multixPU",
     plims::Vector{<:Real} = [-1.0, 1.0],
-    threshold::Real = 0.01
+    threshold::Real = 0.01,
+    init_MPI::Bool = true
 )
     ###################################################
     # MODEL SETUP
     ###################################################
+    # Initialize global grid
+    # Initialize global grid
+    me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, nz; init_MPI=init_MPI)
+    b_width = (2, 2, 2)                             # hide communication parameters
     # Physics
     f0 = srcs.freqdomain                            # dominating frequency [Hz]
+    # Derived numerics
+    gnx, gny, gnz = nx_g(), ny_g(), nz_g()          # global grid size
+    dx = lx / (gnx-1)                               # grid step size x-direction [m]
+    dy = ly / (gny-1)                               # grid step size y-direction [m]
+    dz = lz / (gnz-1)                               # grid step size z-direction [m]
+    # Initialize local velocity model
+    vel  = zeros(nx, ny, nz)
+    vel .= [ vel_func(x_g(ix, dx, vel), y_g(iy, dy, vel), z_g(iz, dz, vel)) for ix=1:nx,iy=1:ny,iz=1:nz ]
     # Derived physics
     vel_max = maximum(vel)                          # maximum velocity [m/s]
-    # Numerics
-    nx, ny, nz = size(vel)                          # number of grid points
-    # Derived numerics
-    dx = lx / (nx-1)                                # grid step size [m]
-    dy = ly / (ny-1)                                # grid step size [m]
-    dz = lz / (nz-1)                                # grid step size [m]
+    # Other numerics
     dt = sqrt(3)/ (vel_max * (1/dx + 1/dy + 1/dz))/2# maximum possible timestep size (CFL stability condition) [s]
     nt = ceil(Int, lt / dt)                         # number of timesteps
     times = collect(range(0.0,step=dt,length=nt))   # time vector [s]
@@ -278,7 +352,7 @@ end
     for s = 1:nsrcs
         possrcs[s,:] .= round.(Int, [srcs.positions[s,1] / dx + 1, srcs.positions[s,2] / dy + 1, srcs.positions[s,3] / dz + 1], RoundNearestTiesUp)
     end
-    @assert all(1 .<= possrcs[:,1] .<= nx) && all(1 .<= possrcs[:,2] .<= ny) && all(1 .<= possrcs[:,3] .<= nz) "At least one source is not inside the model!"
+    @assert all(1 .<= possrcs[:,1] .<= gnx) && all(1 .<= possrcs[:,2] .<= gny) && all(1 .<= possrcs[:,3] .<= gnz) "At least one source is not inside the model!"
     nrecs = recs.n                                      # number of receivers
     traces = zeros(nt, nrecs)                           # receiver seismograms
     # find nearest grid point for each receiver
@@ -286,7 +360,7 @@ end
     for r = 1:nrecs
         posrecs[r,:] .= round.(Int, [recs.positions[r,1] / dx + 1, recs.positions[r,2] / dy + 1, recs.positions[r,3] / dz + 1], RoundNearestTiesUp)
     end
-    @assert all(1 .<= posrecs[:,1] .<= nx) && all(1 .<= posrecs[:,2] .<= ny) && all(1 .<= posrecs[:,3] .<= nz) "At least one receiver is not inside the model!"
+    @assert all(1 .<= posrecs[:,1] .<= gnx) && all(1 .<= posrecs[:,2] .<= gny) && all(1 .<= posrecs[:,3] .<= gnz) "At least one receiver is not inside the model!"
     ###################################################
 
     ###################################################
@@ -306,66 +380,27 @@ end
     ###################################################
 
     ###################################################
-    # BENCHMARKING (with BenchmarkTools)
-    ###################################################
-    if do_bench
-        # run benchmark trial
-        trial = @benchmark $forward!(
-            $pold,    $pcur,    $pnew,      $fact, $_dx, $_dx2, $_dy, $_dy2, $_dz, $_dz2,
-            $halo,    $ψ_x_l,   $ψ_x_r,     $ξ_x_l, $ξ_x_r, $ψ_y_l, $ψ_y_r, $ξ_y_l, $ξ_y_r, $ψ_z_l, $ψ_z_r, $ξ_z_l, $ξ_z_r,
-            $a_x_hl,  $a_x_hr,  $b_K_x_hl,  $b_K_x_hr,
-            $a_x_l,   $a_x_r,   $b_K_x_l,   $b_K_x_r,
-            $a_y_hl,  $a_y_hr,  $b_K_y_hl,  $b_K_y_hr,
-            $a_y_l,   $a_y_r,   $b_K_y_l,   $b_K_y_r,
-            $a_z_hl,  $a_z_hr,  $b_K_z_hl,  $b_K_z_hr,
-            $a_z_l,   $a_z_r,   $b_K_z_l,   $b_K_z_r,
-            $possrcs_a, $dt2srctf, $posrecs_a, $traces, 1
-        )
-        # check benchmark
-        confidence = 0.95
-        med_range = 0.05
-        pass, ci, tol_range, t_it_mean = check_trial(trial, confidence, med_range)
-        t_it = minimum(trial).time / 1e9
-        if !pass
-            @printf("Statistical trial check not passed!\nmedian = %g [sec]\n%d%% tolerance range = (%g, %g) [sec]\n%d%% CI = (%g, %g) [sec]\n", t_it_mean, med_range*100, tol_range[1], tol_range[2], confidence*100, ci[1], ci[2])
-        end
-        # allocated memory [GB]
-        alloc_mem = (
-                     3*(nx*ny*nz) +
-                     2*((halo+1)*ny*nz) + 2*(halo*ny*nz) +
-                     2*((halo+1)*nx*nz) + 2*(halo*nx*nz) +
-                     2*((halo+1)*nx*ny) + 2*(halo*nx*ny) +
-                     4*3*(halo+1) + 4*3*halo
-                    ) * sizeof(Float64) / 1e9
-        # effective memory access [GB]
-        A_eff = (
-            (halo+1)*ny*nz*2*(2 + 1) +         # update_ψ_x!
-            (halo+1)*nx*nz*2*(2 + 1) +         # update_ψ_y!
-            (halo+1)*nx*ny*2*(2 + 1) +         # update_ψ_z!
-            (halo+1)*ny*nz*2*(1 + 1) +         # update ξ_x in update_p!
-            (halo+1)*nx*nz*2*(1 + 1) +         # update ξ_y in update_p!
-            (halo+1)*nx*ny*2*(1 + 1) +         # update ξ_z in update_p!
-            4*nx*ny*nz                         # update_p! (inner points)
-        ) * sizeof(Float64) / 1e9
-        # effective memory throughput [GB/s]
-        T_eff = A_eff / t_it
-        @printf("size = %dx%d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, t_it, T_eff, alloc_mem)
-        return nothing
-    end
-    ###################################################
-
-    ###################################################
     # VISUALIZATION SETUP
     ###################################################
     if do_vis
         # Disable interactive visualization
         ENV["GKSwstype"]="nul"
         # Set default plot values
-        default(size=(1400, 1400), framestyle=:box, grid=false, margin=20pt, legendfontsize=14, labelfontsize=14)
+        if me == 0 default(size=(1400, 1400), framestyle=:box, grid=false, margin=20pt, legendfontsize=14, labelfontsize=14) end
         # Create results folders if not present
-        mkpath(DOCS_FLD)
+        if me == 0 mkpath(DOCS_FLD) end
         # Create animation object
-        anim = Animation()
+        if me == 0 anim = Animation() end
+
+        # global array for saving
+        nx_v,ny_v,nz_v = (nx-2)*dims[1],(ny-2)*dims[2],(nz-2)*dims[3]
+        if (nx_v*ny_v*nz_v*sizeof(Data.Number) > 0.8*Sys.free_memory()) error("Not enough memory for saving.") end
+        pcur_global = zeros(nx_v, ny_v, nz_v) # global array for saving
+        vel_global = zeros(nx_v, ny_v, nz_v)
+        pcur_inner = zeros(nx-2, ny-2, nz-2) # no halo local array for saving
+        vel_inner = zeros(nx-2, ny-2, nz-2) # no halo local array for saving
+        vel_inner .= vel[2:end-1,2:end-1,2:end-1]
+        gather!(vel_inner, vel_global)
     end
     ###################################################
 
@@ -403,23 +438,27 @@ end
             a_y_l, a_y_r, b_K_y_l, b_K_y_r,
             a_z_hl, a_z_hr, b_K_z_hl, b_K_z_hr,
             a_z_l, a_z_r, b_K_z_l, b_K_z_r,
-            possrcs_a, dt2srctf, posrecs_a, traces, it
+            possrcs_a, dt2srctf, posrecs_a, traces, it,
+            gnx, gny, gnz, dims, coords, b_width
         )
 
         niter += 1
 
         # visualization
-        if do_vis && (it % nvis == 0)
+        if do_vis && (it % nvis == 0)   # gather global pressure
+            pcur_inner .= Array(pcur)[2:end-1,2:end-1,2:end-1]; gather!(pcur_inner, pcur_global)
+        end
+        if me == 0 && do_vis && (it % nvis == 0)
             # take index for slice in middle
-            slice_index = div(nz, 2, RoundUp)
+            slice_index = div(gnz, 2, RoundUp)
             # get velocity slice and pressure slice
-            vel_slice = vel[:,:,slice_index]
-            p_slice = pcur[:,:,slice_index]
+            vel_slice = vel_global[:,:,slice_index]
+            p_slice = pcur_global[:,:,slice_index]
             # velocity model heatmap
             velview = (((copy(vel_slice) .- minimum(vel_slice)) ./ (maximum(vel_slice) - minimum(vel_slice)))) .* (plims[2] - plims[1]) .+ plims[1]
             p1 = heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal, colorbar=false)
             # pressure heatmap
-            pview = Array(p_slice)
+            pview = copy(p_slice)
             # print iteration values
             maxabsp = @sprintf "%e" maximum(abs.(pview))
             @show it*dt, it, maxabsp
@@ -429,7 +468,7 @@ end
             heatmap!(0:dx:lx, 0:dy:ly, pview';
                   xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx [m]", ylabel="ly [m]", clabel="pressure", c=:diverging_bwr_20_95_c54_n256, colorbar=false,
-                  title="Pressure [3D Acoustic CPML, lz/2 slice]\n(nx=$(nx), ny=$(ny), nz=$(nz), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), time=$(round(it*dt, digits=2)) [sec], maxabsp=$(maxabsp) [Pas]"
+                  title="Pressure [3D multixPU Acoustic CPML, lz/2 slice]\n(gnx=$(gnx), gny=$(gny), gnz=$(gnz), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), time=$(round(it*dt, digits=2)) [sec], maxabsp=$(maxabsp) [Pas]"
             )
             # sources positions
             # filter out sources not on the slice
@@ -461,7 +500,7 @@ end
                 xlims=(times[1], times[end]),
                 xlabel="time [sec]",
                 ylabel="pressure [Pas]",
-                title="Receivers seismograms",
+                title="Receivers seismograms (proc = 0)",
                 labels=reshape(["receiver $(i)" for i in 1:nrecs], (1,nrecs))
             )
 
@@ -479,7 +518,7 @@ end
         # save current pressure as HD5 file
         if do_save && (it % nsave == 0)
             # delete file if present
-            save_file_path = joinpath(TMP_FLD, "$(save_name)_it$(it).h5")
+            save_file_path = joinpath(TMP_FLD, "$(save_name)_it$(it)_proc$(me).h5")
             if isfile(save_file_path)
                 rm(save_file_path)
             end
@@ -506,7 +545,8 @@ end
     ###################################################
     # COMPUTE PERFORMANCE
     ###################################################
-    t_toc = Base.time() - t_tic
+    # compute performance
+    t_toc = toc()
     t_it  = t_toc / niter                  # Execution time per iteration [s]
     # allocated memory [GB]
     local_alloc_mem = (
@@ -516,19 +556,20 @@ end
         2*((halo+1)*nx*ny) + 2*(halo*nx*ny) +
         4*3*(halo+1) + 4*3*halo
     ) * sizeof(Float64) / 1e9
+    global_alloc_mem = nprocs * local_alloc_mem
     # effective memory access [GB]
     A_eff = (
-        (halo+1)*ny*nz*2*(2 + 1) +         # update_ψ_x!
-        (halo+1)*nx*nz*2*(2 + 1) +         # update_ψ_y!
-        (halo+1)*nx*ny*2*(2 + 1) +         # update_ψ_z!
-        (halo+1)*ny*nz*2*(1 + 1) +         # update ξ_x in update_p!
-        (halo+1)*nx*nz*2*(1 + 1) +         # update ξ_y in update_p!
-        (halo+1)*nx*ny*2*(1 + 1) +         # update ξ_z in update_p!
-        4*nx*ny*nz                        # update_p! (inner points)
+        (halo+1)*gny*gnz*2*(2 + 1) +         # update_ψ_x!
+        (halo+1)*gnx*gnz*2*(2 + 1) +         # update_ψ_y!
+        (halo+1)*gnx*gny*2*(2 + 1) +         # update_ψ_z!
+        (halo+1)*gny*gnz*2*(1 + 1) +         # update ξ_x in update_p!
+        (halo+1)*gnx*gnz*2*(1 + 1) +         # update ξ_y in update_p!
+        (halo+1)*gnx*gny*2*(1 + 1) +         # update ξ_z in update_p!
+        4*gnx*gny*gnz                        # update_p! (inner points)
     ) * sizeof(Float64) / 1e9
     # effective memory throughput [GB/s]
     T_eff = A_eff / t_it
-    @printf("size = %dx%dx%d, total time = %1.8e sec, time per it = %1.8e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, nz, t_toc, t_it, T_eff, local_alloc_mem)
+    if me == 0 @printf("size = %dx%dx%d, total time = %1.8e sec, time per it = %1.8e sec, Teff = %1.3f GB/s, local memory = %1.3f GB, global memory = %1.3f GB\n", nx, ny, nz, t_toc, t_it, T_eff, local_alloc_mem, global_alloc_mem) end
     ###################################################
 
     ###################################################

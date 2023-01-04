@@ -106,7 +106,7 @@ end
 end
 
 @parallel_indices (ir) function record_receivers!(pnew, traces, posrecs, it, ishift, jshift, nx, ny)
-    # Get local source positions from global ones
+    # Get local receiver position from global ones
     irec = floor(Int, posrecs[ir,1]) - ishift
     jrec = floor(Int, posrecs[ir,2]) - jshift
 
@@ -324,9 +324,10 @@ end
         # Create animation object
         if me == 0 anim = Animation() end
 
+        # global array for saving
         nx_v,ny_v = (nx-2)*dims[1],(ny-2)*dims[2]
         if (nx_v*ny_v*sizeof(Data.Number) > 0.8*Sys.free_memory()) error("Not enough memory for saving.") end
-        pcur_global = zeros(nx_v, ny_v) # global array for saving
+        pcur_global = zeros(nx_v, ny_v)
         vel_global = zeros(nx_v, ny_v)
         pcur_inner = zeros(nx-2, ny-2) # no halo local array for saving
         vel_inner = zeros(nx-2, ny-2) # no halo local array for saving
@@ -382,7 +383,7 @@ end
             heatmap!(dx:dx:lx-dx, dy:dy:ly-dy, pview';
                   xlims=(0,lx),ylims=(0,ly), clims=(plims[1], plims[2]), aspect_ratio=:equal,
                   xlabel="lx", ylabel="ly", clabel="pressure", c=:diverging_bwr_20_95_c54_n256, colorbar=false,
-                  title="Pressure [2D multixPU Acoustic CPML]\n(nx=$(nx), ny=$(ny), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), time=$(round(it*dt, digits=2)) [sec], maxabsp=$(maxabsp) [Pas]"
+                  title="Pressure [2D multixPU Acoustic CPML]\n(gnx=$(gnx), gny=$(gny), halo=$(halo), rcoef=$(rcoef), threshold=$(round(threshold * 100, digits=2))%)\nit=$(it), time=$(round(it*dt, digits=2)) [sec], maxabsp=$(maxabsp) [Pas]"
             )
             # sources positions
             scatter!((possrcs[:,1].-1) .* dx, (possrcs[:,2].-1) .* dy; markersize=10, markerstrokewidth=0, markershape=:star, color=:red, label="sources")
@@ -410,7 +411,7 @@ end
                 xlims=(times[1], times[end]),
                 xlabel="time [sec]",
                 ylabel="pressure [Pas]",
-                title="Receivers seismograms",
+                title="Receivers seismograms (proc = 0)",
                 labels=reshape(["receiver $(i)" for i in 1:nrecs], (1,nrecs))
             )
             # layout
