@@ -31,12 +31,12 @@ using AcousticWaveCPML.Acoustic1D
     dx = lx / (nx-1)
     dt = dx / c0
     nt = ceil(Int, lt / dt)
-    times = collect(range(0.0, step=dt, length=nt))
+    times = collect(range(0.0, step=dt, length=nt+1))
     dist = norm(possrcs[1,:] .- posrecs[1,:])
     src = rickersource1D.(times, t0, f0)
     # Calculate Green's function
     G = times .* 0.
-    for it = 1:nt
+    for it = 1:nt+1
         # Heaviside function
         if (times[it] - dist / c0) >= 0
             G[it] = 1. / (2 * c0)
@@ -44,11 +44,11 @@ using AcousticWaveCPML.Acoustic1D
     end
     # Convolve with source term
     Gc = conv(G, src .* dt)
-    Gc = Gc[1:nt]
+    Gc = Gc[2:nt+1]     # skip time 0
 
     @test length(numerical_trace) == length(Gc) == nt
     # test integral of absolute difference over time is less then a constant 1% error relative to the peak analytical solution
-    @test integrate(times, abs.(numerical_trace .- Gc)) <= maximum(abs.(Gc)) * 0.01 * lt
+    @test integrate(times[2:end], abs.(numerical_trace .- Gc)) <= maximum(abs.(Gc)) * 0.01 * lt
 end
 
 @testset "Test homogeneous velocity analytical solution CPML halo 20" begin
@@ -78,12 +78,12 @@ end
     dx = lx / (nx-1)
     dt = dx / c0
     nt = ceil(Int, lt / dt)
-    times = collect(range(0.0, step=dt, length=nt))
+    times = collect(range(0.0, step=dt, length=nt+1))
     dist = norm(possrcs[1,:] .- posrecs[1,:])
     src = rickersource1D.(times, t0, f0)
     # Calculate Green's function
     G = times .* 0.
-    for it = 1:nt
+    for it = 1:nt+1
         # Heaviside function
         if (times[it] - dist / c0) >= 0
             G[it] = 1. / (2 * c0)
@@ -91,9 +91,9 @@ end
     end
     # Convolve with source term
     Gc = conv(G, src .* dt)
-    Gc = Gc[1:nt]
+    Gc = Gc[2:nt+1]
 
     @test length(numerical_trace) == length(Gc) == nt
     # test integral of absolute difference over time is less then a constant 1% error relative to the peak analytical solution
-    @test integrate(times, abs.(numerical_trace .- Gc)) <= maximum(abs.(Gc)) * 0.01 * lt
+    @test integrate(times[2:end], abs.(numerical_trace .- Gc)) <= maximum(abs.(Gc)) * 0.01 * lt
 end

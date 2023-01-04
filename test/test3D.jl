@@ -1,8 +1,9 @@
-using Test, ReferenceTests
+using Test, ReferenceTests, BSON
+using DSP, NumericalIntegration, LinearAlgebra
 
 using AcousticWaveCPML
-
-include("../scripts/solvers/acoustic_3D.jl")
+using AcousticWaveCPML.Acoustic3D
+import AcousticWaveCPML.Acoustic3D: update_ψ!
 
 REF_FLD = joinpath(@__DIR__, "references")
 
@@ -66,44 +67,100 @@ REF_FLD = joinpath(@__DIR__, "references")
     @test ψ_z_r[:,:,end] == a6
 end
 
-@testset "Reference test constant velocity" begin
+@testset "Test homogeneous velocity analytical solution" begin
     # simple constant velocity model
-    nx = ny = nz = 61
-    lx = ly = lz = (nx-1) * 10.0
-    vel = 2000.0 .* ones(Float64, nx, ny, nz)
-    nt = 1000
-    # one source in the center
-    possrcs = zeros(Int,1,3)
-    possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
+    nx = ny = nz = 101                      # grid size
+    lx = ly = lz = 20.0                     # model sizes [m]
+    c0 = 1.0
+    vel = c0 .* ones(Float64, nx, ny, nz)   # velocity model [m/s]
+    lt = 26.0                               # final time [s]
+    # sources
+    f0 = 0.25                                # source dominating frequency [Hz]
+    t0 = 4 / f0                             # source activation time [s]
+    stf = rickersource1D                    # second derivative of gaussian
+    possrcs = zeros(1,3)
+    possrcs[1,:] .= [lx/2, ly/2, lz/2]
+    srcs = Sources(possrcs, [t0], [stf], f0)
+    # receivers
+    posrecs = zeros(1,3)
+    posrecs[1,:] .= [lx/4, ly/2, lz/2]
+    recs = Receivers(posrecs)
 
-    pend = acoustic3D(lx, ly, lz, nt, vel, possrcs;
-                      halo=20, rcoef=0.0001, do_vis=false, do_save=false, freetop=false)
+    # Numerical solution
+    solve3D(lx, ly, lz, lt, vel, srcs, recs; halo=0, freetop=false)
+    numerical_trace = recs.seismograms[:,1]
 
-    @test_reference joinpath(REF_FLD, "3D_constant_center_halo20_nt1000.txt") pend
-end
-
-@testset "Reference test gradient velocity" begin
-    # gradient velocity model
-    nx = ny = nz = 61
-    lx = ly = lz = (nx-1) * 10.0
-    vel = zeros(Float64, nx, ny, nz)
-    for i=1:nx
-        for j=1:ny
-            for k = 1:nz
-                vel[i,j,k] = 2000.0 + 12.0*(j-1)
-            end
+    # Analytical solution
+    dx = lx / (nx-1)
+    dy = ly / (ny-1)
+    dz = lz / (nz-1)
+    dt = sqrt(3) / (c0 * (1/dx + 1/dy + 1/dz))
+    nt = ceil(Int, lt / dt)
+    times = collect(range(0.0, step=dt, length=nt+1))
+    dist = norm(possrcs[1,:] .- posrecs[1,:])
+    src = rickersource1D.(times, t0, f0)
+    # Calculate Green's function
+    G = times .* 0.
+    for it = 1:nt+1
+        # Delta function
+        if (times[it] - dist / c0) >= 0
+            G[it] = 1.0 / (4π * c0^2 * dist)
+            break
         end
     end
-    # constant after some depth
-    bigv = vel[1,ny-40,1]
-    vel[:,ny-40:end,:] .= bigv
-    nt = 1000
-    # one source in the center
-    possrcs = zeros(Int,1,3)
-    possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
+    Gc = conv(G, src)
+    Gc = Gc[2:nt+1]
 
-    pend = acoustic3D(lx, ly, lx, nt, vel, possrcs;
-                      halo=20, rcoef=0.0001, do_vis=false, do_save=false, freetop=false)
+    @test length(numerical_trace) == length(Gc) == nt
+    # test integral of absolute difference over time is less then a constant 1% error relative to the peak analytical solution
+    @test integrate(times[2:end], abs.(numerical_trace .- Gc)) <= maximum(abs.(Gc)) * 0.01 * lt
+end
 
-    @test_reference joinpath(REF_FLD, "3D_gradient_center_halo20_nt1000.txt") pend
+@testset "Test homogeneous velocity analytical solution CPML halo 20" begin
+    # simple constant velocity model
+    nx = ny = nz = 101                      # grid size
+    lx = ly = lz = 20.0                     # model sizes [m]
+    c0 = 1.0
+    vel = c0 .* ones(Float64, nx, ny, nz)   # velocity model [m/s]
+    lt = 50.0                               # final time [s]
+    # sources
+    f0 = 0.25                                # source dominating frequency [Hz]
+    t0 = 4 / f0                             # source activation time [s]
+    stf = rickersource1D                    # second derivative of gaussian
+    possrcs = zeros(1,3)
+    possrcs[1,:] .= [lx/2, ly/2, lz/2]
+    srcs = Sources(possrcs, [t0], [stf], f0)
+    # receivers
+    posrecs = zeros(1,3)
+    posrecs[1,:] .= [lx/4, ly/2, lz/2]
+    recs = Receivers(posrecs)
+
+    # Numerical solution
+    solve3D(lx, ly, lz, lt, vel, srcs, recs; halo=20, freetop=false)
+    numerical_trace = recs.seismograms[:,1]
+
+    # Analytical solution
+    dx = lx / (nx-1)
+    dy = ly / (ny-1)
+    dz = lz / (nz-1)
+    dt = sqrt(3) / (c0 * (1/dx + 1/dy + 1/dz))
+    nt = ceil(Int, lt / dt)
+    times = collect(range(0.0, step=dt, length=nt+1))
+    dist = norm(possrcs[1,:] .- posrecs[1,:])
+    src = rickersource1D.(times, t0, f0)
+    # Calculate Green's function
+    G = times .* 0.
+    for it = 1:nt+1
+        # Delta function
+        if (times[it] - dist / c0) >= 0
+            G[it] = 1.0 / (4π * c0^2 * dist)
+            break
+        end
+    end
+    Gc = conv(G, src)
+    Gc = Gc[2:nt+1]
+
+    @test length(numerical_trace) == length(Gc) == nt
+    # test integral of absolute difference over time is less then a constant 1% error relative to the peak analytical solution
+    @test integrate(times[2:end], abs.(numerical_trace .- Gc)) <= maximum(abs.(Gc)) * 0.01 * lt
 end

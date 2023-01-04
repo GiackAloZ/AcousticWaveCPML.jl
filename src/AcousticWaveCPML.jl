@@ -17,6 +17,9 @@ module AcousticWaveCPML
     # 2D acoustic solver module
     include("Acoustic2D.jl")
 
+    # 3D acoustic solver module
+    include("Acoustic3D.jl")
+
     # # xPU 2D acoustic solver module using Threads
     ParallelStencil.@reset_parallel_stencil()
     include("Acoustic2D_Threads.jl")

@@ -34,10 +34,10 @@ import ..AcousticWaveCPML: DOCS_FLD, calc_Kab_CPML, check_trial, Sources, Receiv
 end
 
 @views function update_p!(pold, pcur, pnew, halo, fact, _dx, _dx2, _dy, _dy2,
-                          ψ_x_l = nothing, ψ_x_r = nothing, ψ_y_l = nothing, ψ_y_r = nothing,
-                          ξ_x_l = nothing, ξ_x_r = nothing, ξ_y_l = nothing, ξ_y_r = nothing,
-                          a_x_l = nothing, a_x_r = nothing, b_K_x_l = nothing, b_K_x_r = nothing,
-                          a_y_l = nothing, a_y_r = nothing, b_K_y_l = nothing, b_K_y_r = nothing)
+                          ψ_x_l, ψ_x_r, ψ_y_l, ψ_y_r,
+                          ξ_x_l, ξ_x_r, ξ_y_l, ξ_y_r,
+                          a_x_l, a_x_r, b_K_x_l, b_K_x_r,
+                          a_y_l, a_y_r, b_K_y_l, b_K_y_r)
     nx, ny = size(pcur)
     for j = 2:ny-1
         for i = 2:nx-1

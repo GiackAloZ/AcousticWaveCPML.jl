@@ -19,10 +19,10 @@ import ..AcousticWaveCPML: DOCS_FLD, calc_Kab_CPML, Sources, Receivers
 end
 
 @views function update_p!(pold, pcur, pnew, halo, fact, _dx, _dx2,
-                          ψ_l = nothing, ψ_r = nothing,
-                          ξ_l = nothing, ξ_r = nothing,
-                          a_x_l = nothing, a_x_r = nothing,
-                          b_K_x_l = nothing, b_K_x_r = nothing)
+                          ψ_l, ψ_r,
+                          ξ_l, ξ_r,
+                          a_x_l, a_x_r,
+                          b_K_x_l, b_K_x_r)
     nx, _... = size(pcur)
     for i = 2:nx-1
         d2p_dx2 = (pcur[i+1] - 2.0*pcur[i] + pcur[i-1])*_dx2
