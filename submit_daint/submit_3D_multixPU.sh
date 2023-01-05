@@ -15,4 +15,4 @@ module load Julia/1.7.2-CrayGNU-21.09-cuda
 export MPICH_RDMA_ENABLED_CUDA=1
 export IGG_CUDAAWARE_MPI=1
 
-srun -n8 bash -c 'LD_PRELOAD="/usr/lib64/libcuda.so:/usr/local/cuda/lib64/libcudart.so" julia --project=.. -O3 --check-bounds=yes --math-mode=fast -- ../scripts/run_acoustic_3D_multixPU.jl'
+srun -n8 bash -c 'LD_PRELOAD="/usr/lib64/libcuda.so:/usr/local/cuda/lib64/libcudart.so" julia --project=.. -O3 --check-bounds=yes --math-mode=fast -- ../scripts/run_acoustic_3D_multixPU_CUDA.jl'
