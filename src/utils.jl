@@ -1,10 +1,10 @@
 using BenchmarkTools, HypothesisTests
 
-"""
-calc_Kab_CPML(halo::Integer,
-              dt::Float64, npower::Float64, d0::Float64,
-              alpha_max_pml::Float64, K_max_pml::Float64,
-              onwhere::String)
+@doc raw"""
+    calc_Kab_CPML(halo::Integer,
+                  dt::Float64, npower::Float64, d0::Float64,
+                  alpha_max_pml::Float64, K_max_pml::Float64,
+                  onwhere::String)
 
 Compute K, a and b parameters for CPML with `halo` layers.
 
@@ -56,15 +56,20 @@ function calc_Kab_CPML(halo::Integer,
     return a_left, a_right, b_K_left, b_K_right
 end
 
+@doc raw"""
+gaussource1D(t::Real, t0::Real, f0::Real)    
+
+First derivative of gaussian source function for current time `t``, activation time `t0` and dominating frequency `f0`.
+"""
 function gaussource1D(t::Real, t0::Real, f0::Real)
     return (t-t0) * exp(-((pi * f0 * (t - t0))^2))
 end
 
 
-"""
-    rickersource1D(t::Vector{<:Real}, t0::Real, f0::Real)    
+@doc raw"""
+    rickersource1D(t::Real, t0::Real, f0::Real)    
 
-Ricker source time function for `t` time array, `t0` activation time, `f0` dominating frequency.
+Ricker source time function for current time `t``, activation time `t0` and dominating frequency `f0`.
 """
 function rickersource1D(t::Real, t0::Real, f0::Real)
     return (1 - 2 * (pi * f0 * (t - t0))^2) * exp(-((pi * f0 * (t - t0))^2))
@@ -87,7 +92,7 @@ function check_trial(trial::BenchmarkTools.Trial, confidence=0.95, range=0.05)
     return ci_left >= tol_left && ci_right <= tol_right, (ci_left / 1e9, ci_right / 1e9), (tol_left / 1e9, tol_right / 1e9), m / 1e9
 end
 
-"""
+@doc raw"""
 Type representing a multi-source configuration for a wave propagation shot.
 """
 struct Sources
@@ -97,12 +102,12 @@ struct Sources
     srctfs::Vector{<:Function}
     freqdomain::Real
 
-    @doc """
+    @doc raw"""
         Sources(
             positions::Matrix{<:Real},
-        t0s::Vector{<:Real},
-        srctfs::Vector{<:Function},
-        freqdomain::Real
+            t0s::Vector{<:Real},
+            srctfs::Vector{<:Function},
+            freqdomain::Real
         )
 
     Create a single shot wave propagation source configuration from source positions, time-functions and a frequency domain.
@@ -119,7 +124,7 @@ struct Sources
     end
 end
 
-"""
+@doc raw"""
 Type representing a multi-receiver configuration for a wave propagation shot.
 """
 mutable struct Receivers
@@ -127,8 +132,8 @@ mutable struct Receivers
     positions::Matrix{<:Real}
     seismograms::Matrix{<:Real}
 
-    @doc """
-        Receivers(positions::Matrix{<:Int})
+    @doc raw"""
+        Receivers(positions::Matrix{<:Real})
 
     Create a single shot wave propagation receivers configuration from receivers positions.
     """
