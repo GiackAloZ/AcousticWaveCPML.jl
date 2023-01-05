@@ -20,7 +20,7 @@ module Acoustic1D
     Solve 1D acoustic wave equation on a model with length `lx` [m], for final time `lt` [sec] with the velocity model `vel` [m/s].
     The size of `vel` implicitly specifies the number of grid points to use for the simulation. 
 
-    Sources and receivers positions are specified by `srcs` and `recs`.
+    Sources and receivers are specified by `srcs` and `recs`.
 
     Return the final time pressure field as a vector and populate the receivers seismograms with the recorded traces.
 

@@ -18,11 +18,11 @@ lt = 0.2
 f0 = 10.0                                     # source dominating frequency [Hz]
 t0 = 4 / f0                                   # source activation time [s]
 stf = rickersource1D                          # second derivative of gaussian
-possrcs = zeros(1,2)
+possrcs = zeros(1,3)
 possrcs[1,:] .= [lx/2, ly/2, lz/2]
 srcs = Sources(possrcs, [t0], [stf], f0)
 # receivers
-posrecs = zeros(2,2)
+posrecs = zeros(2,3)
 posrecs[1,:] .= [lx/2,  2ly/3, lz/2]
 recs = Receivers(posrecs)
 

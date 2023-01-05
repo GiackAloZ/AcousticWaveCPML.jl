@@ -464,11 +464,11 @@ end
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"); fps=5)
     end
     # save seismograms traces
-    recs.seismograms = Data.Array(traces)
+    recs.seismograms = Array(traces)
     ###################################################
 
     # Finalize global grid
     finalize_global_grid(;finalize_MPI=init_MPI)
 
-    return Data.Array(pcur)
+    return Array(pcur)
 end
