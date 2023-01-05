@@ -242,7 +242,7 @@ For 3D simulations, we mostly wanted to make sure that the code behaved similarl
 
 #### Complex velocity model
 
-This complex velocity model has a quite high resolution, so we ran this using multiple GPUs on [Piz Daint](https://www.cscs.ch/computers/piz-daint/). The simulation was fairly quick (8000 timesteps in 30 seconds), but it produced a lot of data that then needed to be post-processed for visualization.
+This complex velocity model has a quite high resolution, so we ran this using 8 GPUs on [Piz Daint](https://www.cscs.ch/computers/piz-daint/). The simulation was fairly quick (8000 timesteps in 30 seconds), but it produced a lot of data that then needed to be post-processed for visualization.
 
 ![1Dcpmlhalo0](./simulations/acoustic3D_multixPU_complex_halo20.gif)
 
