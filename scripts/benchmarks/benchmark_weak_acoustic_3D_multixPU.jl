@@ -15,7 +15,7 @@ vel_func(x,y,z) = 2000.0
 lx, ly, lz = ((nx-2)*dimsss + 2 - 1)*10.0, ((ny-2)*dimsss + 2 - 1)*10.0, ((nz-2)*dimsss + 2 - 1)*10.0
 lt = 0.2
 # sources
-f0 = 10.0                                     # source dominating frequency [Hz]
+f0 = 2.0                                      # source dominating frequency [Hz]
 t0 = 4 / f0                                   # source activation time [s]
 stf = rickersource1D                          # second derivative of gaussian
 possrcs = zeros(1,3)

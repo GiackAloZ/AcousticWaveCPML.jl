@@ -28,7 +28,7 @@ module Acoustic1D
     - `halo::Integer = 20`: the number of CPML layers.
     - `rcoef::Real = 0.0001`: the reflection coeffiecient for CPML layers.
     - `ppw::Real = 10.0`: minimum number of points per wavelength admissible.
-    - `do_bench::Bool = false`: if benchmark instead of computation.
+    - `do_bench::Bool = false`: do benchmark instead of computation.
     - `do_vis::Bool = false`: enables plotting.
     - `nvis::Integer = 5`: plotting time step frequency.
     - `gif_name::String = "acoustic1D"`: name of animation plot.
