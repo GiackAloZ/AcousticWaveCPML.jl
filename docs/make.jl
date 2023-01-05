@@ -9,5 +9,6 @@ makedocs(
 
 deploydocs(
     repo = "github.com/GiackAloZ/AcousticWaveCPML.jl.git",
+    devbranch = "main",
     versions = nothing
 )
