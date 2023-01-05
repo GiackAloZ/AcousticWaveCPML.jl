@@ -1,13 +1,22 @@
-include("../solvers/acoustic_3D_xPU.jl")
+using AcousticWaveCPML
+using AcousticWaveCPML.Acoustic3D_CUDA
 
-# simple constant velocity model
 nx = ny = nz = 513
-nt = 200
-vel = 2000.0 .* ones(Float64, nx, ny, nz)
-lx, ly, lz = (nx-1)*10.0, (ny-1)*10.0, (nz-1)*10.0
-# one source in the center
-possrcs = zeros(Int,1,3)
-possrcs[1,:] = [div(nx, 2, RoundUp), div(ny, 2, RoundUp), div(nz, 2, RoundUp)]
+# simple constant velocity model
+vel = 2000.0 .* ones(Float64, nx, ny)
+lx, ly = (nx-1)*10.0, (ny-1)*10.0
+lt = 0.2
+# sources
+f0 = 10.0                                     # source dominating frequency [Hz]
+t0 = 4 / f0                                   # source activation time [s]
+stf = rickersource1D                          # second derivative of gaussian
+possrcs = zeros(1,2)
+possrcs[1,:] .= [lx/2, ly/2, lz/2]
+srcs = Sources(possrcs, [t0], [stf], f0)
+# receivers
+posrecs = zeros(2,2)
+posrecs[1,:] .= [lx/2,  2ly/3, lz/2]
+recs = Receivers(posrecs)
 
-acoustic3D_xPU(lx, ly, lz, nt, vel, possrcs;
-               halo=20, rcoef=0.0001, do_vis=false, do_save=false, do_bench=false, freetop=false)
+solve3D(lx, ly, lz, lt, vel, srcs, recs;
+              halo=20, rcoef=0.0001 freetop=false)

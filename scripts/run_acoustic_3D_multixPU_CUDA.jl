@@ -43,3 +43,5 @@ function run_complex()
     solve3D_multi(lx, ly, lz, lt, nx, ny, nz, vel_func, srcs, recs;
             halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_multixPU_complex_slice_halo20", save_name="acoustic3D_multixPU_complex_halo20", freetop=true, threshold=0.005, plims=[-1e-10,1e-10])
 end
+
+run_complex()

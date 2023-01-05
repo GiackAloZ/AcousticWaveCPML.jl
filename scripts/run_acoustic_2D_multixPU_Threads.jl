@@ -5,6 +5,9 @@ using Logging
 errorlogger = ConsoleLogger(stderr, Logging.Error)
 global_logger(errorlogger)
 
+import MPI
+MPI.Init()
+
 function run_center()
     # simple constant velocity model
     nx = ny = 201                           # grid size
@@ -24,10 +27,10 @@ function run_center()
     posrecs[2,:] .= [2lx/3, 2ly/3]
     recs = Receivers(posrecs)
 
-    # solve2D_multi(lx, ly, lt, nx, ny, vel_func, srcs, recs;
-    #         halo=0, do_vis=true, nvis=20, gif_name="acoustic2D_multixPU_center_halo0", freetop=false, threshold=0.001, plims=[-2e-8,2e-8], init_MPI=false)
-    # solve2D_multi(lx, ly, lt, nx, ny, vel_func, srcs, recs;
-    #         halo=5, rcoef=0.01, do_vis=true, nvis=20, gif_name="acoustic2D_multixPU_center_halo5", freetop=false, threshold=0.001, plims=[-2e-8,2e-8], init_MPI=false)
+    solve2D_multi(lx, ly, lt, nx, ny, vel_func, srcs, recs;
+            halo=0, do_vis=true, nvis=20, gif_name="acoustic2D_multixPU_center_halo0", freetop=false, threshold=0.001, plims=[-2e-8,2e-8], init_MPI=false)
+    solve2D_multi(lx, ly, lt, nx, ny, vel_func, srcs, recs;
+            halo=5, rcoef=0.01, do_vis=true, nvis=20, gif_name="acoustic2D_multixPU_center_halo5", freetop=false, threshold=0.001, plims=[-2e-8,2e-8], init_MPI=false)
     solve2D_multi(lx, ly, lt, nx, ny, vel_func, srcs, recs;
             halo=10, rcoef=0.001, do_vis=true, nvis=20, gif_name="acoustic2D_multixPU_center_halo10", freetop=false, threshold=0.001, plims=[-2e-8,2e-8], init_MPI=false)
     solve2D_multi(lx, ly, lt, nx, ny, vel_func, srcs, recs;
@@ -36,3 +39,5 @@ function run_center()
 end
 
 run_center()
+
+MPI.Finalize()
