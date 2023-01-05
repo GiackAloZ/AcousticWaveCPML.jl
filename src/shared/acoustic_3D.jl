@@ -334,7 +334,7 @@ end
         ) * sizeof(Float64) / 1e9
         # effective memory throughput [GB/s]
         T_eff = A_eff / t_it
-        @printf("size = %dx%d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, t_it, T_eff, alloc_mem)
+        @printf("size = %dx%dx%d, time = %1.3e sec, Teff = %1.3f GB/s, memory = %1.3f GB\n", nx, ny, nz, t_it, T_eff, alloc_mem)
         return nothing
     end
     ###################################################

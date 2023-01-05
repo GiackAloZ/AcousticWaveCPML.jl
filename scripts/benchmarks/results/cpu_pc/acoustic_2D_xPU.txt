@@ -1,8 +1,9 @@
-size = 33x33, time = 1.917e-05 sec, Teff = 7.601 GB/s, memory = 0.000 GB
-size = 65x65, time = 3.100e-05 sec, Teff = 11.405 GB/s, memory = 0.000 GB
-size = 129x129, time = 6.203e-05 sec, Teff = 15.572 GB/s, memory = 0.001 GB
-size = 257x257, time = 1.655e-04 sec, Teff = 17.991 GB/s, memory = 0.002 GB
-size = 513x513, time = 1.057e-03 sec, Teff = 9.602 GB/s, memory = 0.007 GB
-size = 1025x1025, time = 4.956e-03 sec, Teff = 7.479 GB/s, memory = 0.027 GB
-size = 2049x2049, time = 1.907e-02 sec, Teff = 7.404 GB/s, memory = 0.103 GB
-size = 4097x4097, time = 7.498e-02 sec, Teff = 7.348 GB/s, memory = 0.408 GB
+size = 65x65, time = 8.955e-05 sec, Teff = 3.948 GB/s, memory = 0.000 GB
+size = 129x129, time = 1.482e-04 sec, Teff = 6.519 GB/s, memory = 0.001 GB
+size = 257x257, time = 2.956e-04 sec, Teff = 10.071 GB/s, memory = 0.002 GB
+size = 513x513, time = 8.250e-04 sec, Teff = 12.298 GB/s, memory = 0.007 GB
+size = 1025x1025, time = 2.742e-03 sec, Teff = 13.516 GB/s, memory = 0.027 GB
+size = 2049x2049, time = 1.038e-02 sec, Teff = 13.605 GB/s, memory = 0.103 GB
+size = 4097x4097, time = 4.040e-02 sec, Teff = 13.637 GB/s, memory = 0.408 GB
+size = 4097x4097, total time = 4.15733881e+01 sec, time per it = 4.46066396e-02 sec, Teff = 12.350 GB/s, memory = 0.408 GB
+fullrun: size = 4097x4097, nt = 1132, time = 5.127e+01 sec
