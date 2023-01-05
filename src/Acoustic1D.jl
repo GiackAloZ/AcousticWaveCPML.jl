@@ -24,6 +24,8 @@ module Acoustic1D
 
     Return the final time pressure field as a vector and populate the receivers seismograms with the recorded traces.
 
+    If `do_vis`, create and save visualization in `simulations` folder.
+
     # Arguments
     - `halo::Integer = 20`: the number of CPML layers.
     - `rcoef::Real = 0.0001`: the reflection coeffiecient for CPML layers.

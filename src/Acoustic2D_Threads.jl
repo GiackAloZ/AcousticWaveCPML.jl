@@ -15,7 +15,7 @@ module Acoustic2D_Threads
         do_bench::Bool = false,
         do_vis::Bool = false,
         nvis::Integer = 5,
-        gif_name::String = "acoustic2D",
+        gif_name::String = "acoustic2D_xPU",
         plims::Vector{<:Real} = [-1.0, 1.0],
         threshold::Real = 0.01
     )
@@ -27,6 +27,8 @@ module Acoustic2D_Threads
 
     Return the final time pressure field as a vector and populate the receivers seismograms with the recorded traces.
 
+    If `do_vis`, create and save visualization in `simulations` folder.
+
     # Arguments
     - `halo::Integer = 20`: the number of CPML layers.
     - `rcoef::Real = 0.0001`: the reflection coeffiecient for CPML layers.
@@ -35,7 +37,7 @@ module Acoustic2D_Threads
     - `do_bench::Bool = false`: do benchmark instead of computation.
     - `do_vis::Bool = false`: enables plotting.
     - `nvis::Integer = 5`: plotting time step frequency.
-    - `gif_name::String = "acoustic1D"`: name of animation plot.
+    - `gif_name::String = "acoustic2D_xPU"`: name of animation plot.
     - `plims::Vector{<:Real} = [-1.0, 1.0]`: limits for pressure values in plot.
     - `threshold::Real = 0.01`: percentage of `plims` to use as threshold for plots.
     """
