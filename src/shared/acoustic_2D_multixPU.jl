@@ -371,7 +371,7 @@ end
         if me == 0 && do_vis && (it % nvis == 0)
             # velocity model heatmap
             velview = (((copy(vel_global) .- minimum(vel_global)) ./ (maximum(vel_global) - minimum(vel_global)))) .* (plims[2] - plims[1]) .+ plims[1]
-            heatmap(dx:dx:lx-dx, dy:dy:ly-dy, velview'; c=:grayC, aspect_ratio=:equal, colorbar=false)
+            p1 = heatmap(dx:dx:lx-dx, dy:dy:ly-dy, velview'; c=:grayC, aspect_ratio=:equal, colorbar=false)
             # pressure heatmap
             pview = pcur_global
             # print iteration values
@@ -460,7 +460,7 @@ end
     ###################################################
     # SAVE RESULTS
     ###################################################
-    if do_vis
+    if me == 0 && do_vis
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"); fps=5)
     end
     # save seismograms traces

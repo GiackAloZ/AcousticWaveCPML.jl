@@ -575,7 +575,7 @@ end
     ###################################################
     # SAVE RESULTS
     ###################################################
-    if do_vis
+    if me == 0 && do_vis
         gif(anim, joinpath(DOCS_FLD, "$(gif_name).gif"); fps=5)
     end
     # save seismograms traces

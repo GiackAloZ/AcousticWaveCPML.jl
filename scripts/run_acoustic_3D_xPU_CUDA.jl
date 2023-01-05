@@ -27,9 +27,9 @@ function run_center()
     recs = Receivers(posrecs)
 
     solve3D(lx, ly, lz, lt, vel, srcs, recs;
-            halo=0, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_xPU_center_slice_halo0", save_name="acoustic3D_center_halo0", freetop=false, threshold=0.001, plims=[-1e-10,1e-10])
+            halo=0, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_xPU_center_slice_halo0", save_name="acoustic3D_xPU_center_halo0", freetop=false, threshold=0.001, plims=[-1e-10,1e-10])
     solve3D(lx, ly, lz, lt, vel, srcs, recs;
-            halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_xPU_center_slice_halo20", save_name="acoustic3D_center_halo20", freetop=false, threshold=0.001, plims=[-1e-10,1e-10])
+            halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_xPU_center_slice_halo20", save_name="acoustic3D_xPU_center_halo20", freetop=false, threshold=0.001, plims=[-1e-10,1e-10])
 end
 
 function run_gradient()
@@ -70,7 +70,7 @@ function run_gradient()
     recs = Receivers(posrecs)
 
     solve3D(lx, ly, lz, lt, vel, srcs, recs;
-            halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_xPU_gradient_freetop_slice_halo20", save_name="acoustic3D_gradient_freetop_halo20", freetop=true, threshold=0.01, plims=[-1e-10,1e-10])
+            halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_xPU_gradient_freetop_slice_halo20", save_name="acoustic3D_xPU_gradient_freetop_halo20", freetop=true, threshold=0.01, plims=[-1e-10,1e-10])
 end
 
 run_center()

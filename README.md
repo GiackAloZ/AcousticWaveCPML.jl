@@ -6,8 +6,6 @@
 
 A Julia package for solving acoustic wave propagation in 2D and 3D on multi-xPUs using CPML boundary conditions.
 
-_WIP: this package will also provide functionalities to compute gradients with respect to velocities using the adjoint method and residuals from available data. Checkpointing features will also allow computing gradients without running out of memory._
-
 ## Introduction and motivation
 
 Seismic tomography is the predominant methodology geoscientists use to investigate the structure and properties
@@ -44,13 +42,13 @@ $$
 
 where $p$ is the pressure and $c$ is the wave propagation velocity (i.e. speed of sound). We consider from now on the pressure term $p$ to be the difference from lithostatic pressure. Hence we consider initial values for pressure as $p(x,0) = 0$.
 
-If we also consider a source term $s(x,t)$ the function becomes:
+If we also consider a source term $s(x,t)$ the eqaution becomes:
 
 $$
 \frac{\partial^2 p}{\partial t^2} = c^2 \nabla^2 p + s
 $$
 
-Consider some rectangular area of space $\Omega \in \mathbb{R}^n, n = 1, 2, 3$. Consider also a fine time $T$ at which we end our simulation. Then we can choose an appropriate boundary condition on the boundary $\partial \Omega$ of $\Omega$ and we have a boundary value problem we can solve on the space-time set $\Omega \times [0,T]$.
+Consider some rectangular area of space $\Omega \in \mathbb{R}^n, n = 1, 2, 3$. Consider also a final time $T$ at which we end our simulation. Then we choose an appropriate boundary condition on the boundary $\partial \Omega$ of $\Omega$ and we have a boundary value problem we can solve on the space-time set $\Omega \times [0,T]$.
 
 If we choose a free boundary condition (i.e. a homogenous Dirichlet BDC), we get the following BVP:
 
@@ -63,7 +61,7 @@ $$
 
 ### CPML boundary conditions
 
-The main issue with this type of BDC is that waves are reflected at the boundaries. If we want to use our solver as a forward and adjoint solver for the inverse problem, this causes spurious reflections at the boundaries that we did not have during the experiments in which we gathered data from receivers. To solve this problem, we have adopted the so-called CPML boundary conditions, which are used as a kind of absorbing BDCs that simulate a much bigger area of space then our area of interest $\Omega$.
+Free boundary condition conditions have the issue of creating reflection waves from the boundary, hence they are not suitable for inverse problems forward solvers. One of the possible "solutions" is to run the simulation on a much bigger model and prescribe a final time $T$ so that all reflections from the velocity model itself are recorded at some receivers but no spurious reflections from the boundaries have reached the receivers yet. This is of course computationally expensive, hence motivating the need for _absorbing_ boundary conditions like CPML BDCs.
 
 The main concept of CPML BDCs is to enhance the standard wave equation at the boundaries with additional terms $\psi_i$ and $\xi_i$ that are used to damp the waves:
 
@@ -71,7 +69,7 @@ $$
 \frac{\partial^2 p}{\partial t^2} = c^2 \left( \nabla^2 p + \left( \frac{\partial \psi_i}{\partial i} \right) + \xi_i \right),~ \text{in}~ \tilde{\partial}_i \Omega \times [0,T]
 $$
 
-where $i$ is used as Einstein notation to denote the various dimensions (e.g. $i \in \{x,y,z\}$ in 3D) and $\tilde{\partial}_i \Omega$ denotes an extension of $\partial \Omega$ in the $i$ dimension to create a thicker boundary layer.
+where $i$ is used as Einstein notation to denote the various dimensions (e.g. $i \in \{x,y,z\}$ in 3D) and $\tilde{\partial}_i \Omega$ denotes an extension of $\partial \Omega$ in the $i$ dimension to create a boundary layer composed by some number of "extra" nodal points.
 
 These two new fields $\psi_i$ and $\xi_i$ evolution in time is expressed by the following PDEs:
 
@@ -92,7 +90,7 @@ The coefficients $a_i, b_i, K_i$ are computed in the following way:
 
 $$
 \begin{align*}
-K_i(x) &= 1, \\
+K_i(x) &= 1 + (K_{max} - 1)d_i^N(x), \\
 b_i(x) &= \exp(- \Delta t (D_i(x) + \alpha_i(x))), \\
 a_i(x) &= D_i(x) \frac{b_i(x) - 1.0}{K_i(x) (D_i(x) + K_i(x) \alpha_i(x))}
 \end{align*}
@@ -102,8 +100,8 @@ and
 
 $$
 \begin{align*}
-D_i(x) &= \frac{-(N + 1) \max(c) \log(R)}{2t_i} {d_i(x)}^{N}, \\
-\alpha_i(x) &= \pi f (1 - d_i(x)),
+D_i(x) &= \frac{-(N + 1) \max(c) \log(R)}{2t_i} d_i^N(x), \\
+\alpha_i(x) &= \alpha_{max}(1 - d_i(x)),
 \end{align*}
 $$
 
@@ -111,10 +109,12 @@ where:
 - $t_i$ is the thickness (in meters) of the CPML boundary in dimension $i$,
 - $N$ is a power coefficient (we used $N=2$),
 - $f$ is the dominating frequency of the source $s$,
-- $R$ is the reflection coefficient (different values were used depending on the thickness of the CPML boundary),
 - $d_i(x)$ is the normalized distance (between $0$ and $1$) from $x$ to the interior part $\overline{\Omega}$ of $\Omega$ in dimension $i$.
 
-We picked these experimentally determined coefficients from reference studies of CPML BDCs on the acoustic wave equation (see [[1](#references)] and [[2](#references)]).
+We picked some experimentally determined coefficients from reference studies of CPML BDCs on the acoustic wave equation (see [[1](#references)] and [[2](#references)]). These are the following:
+- $K_{max} = 1$
+- $\alpha_{max} = \pi f$
+- $R = [0.01, 0.001, 0.0001]$ for $[5, 10, 20]$ number of extra CPML nodal points respectively.
 
 One crucial observation is that each component of the $\psi_i$ and $\xi_i$ fields is non-zero only in the boundary incident to its dimension (i.e. $\psi_x$ is only non-zero in the $x$-direction boundaries). This simplifies the equations in most of the boundary regions: the full equation needs to be computed only for boundary corners.
 
@@ -133,20 +133,28 @@ $$
 We used the most simple finite-difference scheme: second order explicit FD schemes for both space and time. We stagger the $\psi_i$ field in between grid nodal points in $\tilde{\partial}_i \Omega$ and place $p, c, \xi_i$ fields in nodal points ($\xi_i$ only present in $\tilde{\partial}_i \Omega$).
 
 We split time step computations into two substeps:
-- first we update the $\psi_i$ fields using $(1)$,
-- then we update the $\xi_i$ fields using $(2)$ at the same time we use $(3)$ and $(4)$ to update pressure values.
+- first we update the $\psi_i$ fields,
+- then we update the $\xi_i$ and pressure fields at the same time.
 
-This separation is crucial to ensure that the $\psi_i$ fields are computed before updating pressure with $(4)$. Synchronization is used to make sure this happens. Note that, since every $\psi_i$ field in each dimension $i$ is independent of each other and only uses pressure derivatives in the direction of incidence of $\tilde{\partial_i} \Omega$. This means that we do not have any inter-dependencies between different dimensions, so we can compute all $\psi_i$ fields in parallel.
+This separation is crucial to ensure that the $\psi_i$ fields are computed before updating $\xi_i$ and pressure. Note that, since every $\psi_i$ field in each dimension $i$ is independent of each other and only uses pressure derivatives in the direction of incidence of $\tilde{\partial_i} \Omega$, we do not have any inter-dependencies between different $\psi_i$, so we can compute each of them in parallel (e.g. on different CUDA streams).
 
 ## Results
 
-We have run several simulations in 1D, 2D and 3D to ensure qualitative analysis of CPML boundary conditions in various setups. In this section, we briefly explain the setups used.
+We have run several simulations in 1D, 2D and 3D to ensure qualitative and quantitative analysis of CPML boundary conditions in various setups. In this section, we briefly explain the setups used.
+
+### Comparisons against analytical solutions
+
+Since solutions for constant velocity models with one point source are known (see [[5](#references)]), we first compared numerical solutions with analytical ones.
+
+We tested two scenarios:
+- no CPML layers with a cut final time to not get reflections,
+- 20 CPML layers with a bigger final time to test for appropriate damping.
+
+For the source terms, we always use a Ricker wavelet source (second derivative of a Gaussian) to simulate an "impulse" source.
+
+We recorded the pressure trace at a receiver placed at a fixed distance from the source and compared it to the analytical solution to verify for correctedness. You can find these tests under the `test` folder for each version.
 
 ### Setups
-
-For the source terms, we always use a Ricker wavelet source (second derivative of a Gaussian) to simulate an "impulse" source. We used sources at $8$ Hz and we scale them in amplitude for the 2D and 3D setups (this is done because we need a "stronger" source in 2D and 3D because the energy is spread over an increasingly bigger volume). Also pressure in the animations is sometimes scaled to provide better visualization (i.e. the logarithm of the absolute value of pressure is shown in the 3D plots), so the scales have no strict physical meaning in visualization. However, the assumption that zero pressure is the lithostatic pressure still holds.
-
-We also scale the model size in order to always have at least 10 points per wavelength to deal with numerical dispersion. For simplicity, we adopted a constant grid step size in all dimensions for all setups. This does not mean that the grid point number is the same every time, it just means that the grid cells are square and always have the same size in all dimensions (although our code in general and can be used for any grid step size). This is the same for time step size, we have fixed one that works and fulfill the CFL stability criterion (but one can choose it arbitrarily).
 
 We have mainly three types of setups:
 - constant velocity models with a single source located in the center and CPML layers in all boundary regions;
@@ -154,6 +162,8 @@ We have mainly three types of setups:
 - complex velocity model (from [[3](#references)]) with multiple sources located at the top of the model and **NO** CPML layers on the top boundary.
 
 We use different configurations of CPML layers (0, 5, 10 or 20 layers in each boundary) with different reflection coefficients (these are shown in the animation plots).
+
+We record traces at some selected positions to observe the damping effect of CPML BDCs.
 
 ### 1D CPML
 
@@ -166,15 +176,15 @@ For the 1D simulations, we show a simple constant velocity model with 201 grid p
 | CPML layers = 10            |  CPML layers = 20       |
 ![1Dcpmlhalo10](./simulations/acoustic1D_center_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic1D_center_halo20.gif)
 
-We can see that without CPML layers, the wave gets reflected by the boundaries. Starting to add CPML layers, the wave gets absorbed by the boundaries, the more layers we use the less spurious oscillations we get back to the source.
+We can see that without CPML layers, the wave gets reflected at the boundaries. Starting to add CPML layers, the wave gets absorbed by the boundaries, the more layers the less spurious oscillations we get back to the source.
 
 ### 2D CPML
 
 #### Constant velocity model
 
-In this simulation we tested the 2D CPML model by looking at spurious reflection waves coming from the boundaries using different amounts of CPML layers. We use a threshold to cut low pressure values and make the visualization more intuitive.
+In these simulations we tested the 2D CPML solver by looking at spurious reflection waves coming from the boundaries using different amounts of CPML layers. We use a threshold to cut low pressure values.
 
-We have also plotted a quantitative measure of the maximum absolute pressure value in the whole field. This value should decay rapidly as soon as the main wavefront hits the boundary and then continue to decrease.
+We show the maximum absolute pressure value in the whole field to see how much of the wave dissipates after hitting the boundaries.
 
 |                          |                       |
 :-------------------------:|:-------------------------:
@@ -196,42 +206,45 @@ In this simulation we wanted to tackle a non-constant velocity model, but still 
 | CPML layers = 10            |  CPML layers = 20       |
 ![1Dcpmlhalo10](./simulations/acoustic2D_xPU_gradient_freetop_halo10.gif)  |  ![1Dcpmlhalo20](./simulations/acoustic2D_xPU_gradient_freetop_halo20.gif)
 
-In this case we see that with 10 CPML layers we almost completely absorb the main wavefront (can you see a bit of it coming back to the top?), but the maximum absolute pressure for 20 CPML layers decays much quicker.
-
 #### Complex velocity model
 
-Here we investigated a complex velocity model from [[3](#references)] to see how the code behaves with reflections from the model itself. Here note that we used quite a high threshold.
+Here we investigated a complex velocity model from [[3](#references)] to see how the code behaves with reflections from the model itself. Here note that we used quite a high threshold for pressure shown in the animations.
 
 |                          |                       |
 :-------------------------:|:-------------------------:
 | CPML layers = 0            |  CPML layers = 20       |
 ![1Dcpmlhalo0](./simulations/acoustic2D_xPU_complex_freetop_halo0.gif)  |  ![1Dcpmlhalo5](./simulations/acoustic2D_xPU_complex_freetop_halo20.gif)
 
-We compare the models with and without CPML layers and see that we get quite good results: the waves are mostly absorbed and the maximum absolute pressure value decreases.
+We compare the models with and without CPML layers and see that we get quite good results: the waves are mostly absorbed and the maximum absolute pressure value decreases after all waves reach the boundaries.
 
 ### 3D CPML
 
-For 3D simulations, we mostly wanted to make sure that the code behaved similarly to the 2D code. We made a small change in the first constant velocity model simulation: we have free top boundary conditions. Apart from that we also plot a slice of the model at $z = nz/2$ to compare behavior with 2D versions.
+For 3D simulations, we mostly wanted to make sure that the code behaved similarly to the 2D code. We plot a slice of the model at $z = nz/2$ to compare behavior with 2D versions and also a 3D isometry visualization.
 
 #### Constant velocity model
 
-|          | |
+| CPML layers = 0         | |
 :-------------------------:|:-------------------------:
 | 2D nz/2 slice            | 3D isometry |
-![1Dcpmlhalo0](./simulations/acoustic3D_center_halo20_slice.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_center_halo20.gif)
+![1Dcpmlhalo0](./simulations/acoustic3D_center_slice_halo0.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_center_halo0.gif)
+
+| CPML layers = 20         | |
+:-------------------------:|:-------------------------:
+| 2D nz/2 slice            | 3D isometry |
+![1Dcpmlhalo0](./simulations/acoustic3D_center_slice_halo20.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_center_halo20.gif)
 
 #### Gradient velocity model
 
-|          | |
+|         | |
 :-------------------------:|:-------------------------:
 | 2D nz/2 slice            | 3D isometry |
-![1Dcpmlhalo0](./simulations/acoustic3D_gradient_halo20_slice.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_gradient_halo20.gif)
+![1Dcpmlhalo0](./simulations/acoustic3D_gradient_freetop_slice_halo20.gif)  | ![1Dcpmlhalo0](./simulations/acoustic3D_gradient_freetop_halo20.gif)
 
 #### Complex velocity model
 
 This complex velocity model has a quite high resolution, so we ran this using multiple GPUs on [Piz Daint](https://www.cscs.ch/computers/piz-daint/). The simulation was fairly quick (8000 timesteps in 30 seconds), but it produced a lot of data that then needed to be post-processed for visualization.
 
-![1Dcpmlhalo0](./simulations/acoustic3Dmulti_complex_halo20.gif)
+![1Dcpmlhalo0](./simulations/acoustic3D_multixPU_complex_halo20.gif)
 
 We can see a bunch of reflections from the velocity differences in the model, but at some point all waves are mostly absorbed.
 
@@ -257,13 +270,11 @@ Each measurement (i.e. point in the plot) was conducted using the `@belapsed` ma
 
 ![Performance 2D and 3D](./scripts/benchmarks/results/performance_2D3D_perf.png)
 
-We can see that the performance on the GPU gets better as soon as the problem size is big enough, and then we get a plateau. On the contrary, big models do not perform as well on the CPU because of a slower memory bandwidth (for small problem sizes the cache can be used to speed up computation and we see this in the plot). For the 2D computation, we reach around 86% of GPU peak performance, while for 3D we reach around 60%. This is expected, since the GPU memory pattern and threads scheduling is not optimized for 3D computations.
-
-NOTE: This is a log-log plot so differences in performance grow up as performance increases.
+We can see that the performance on the GPU gets better as soon as the problem size is big enough, and then we get a plateau. On the contrary, big models do not perform as well on the CPU because of a slower memory bandwidth. For the 2D computation, we reach around 87% of GPU peak performance, while for 3D we reach around 60%. This is expected, since the GPU memory pattern and threads scheduling is not optimized for 3D computations.
 
 ### Weak scaling of 2D and 3D multi-xPU kernels
 
-In this plot we investigate if we have a good scaling code that can be used to run bigger models on multiple xPUs in the same amount of time as smaller models on a single xPU. We only measure GPUs on multiple Piz Daint nodes, since the availability of a fast network is essential to get good scaling across multiple nodes.
+Here we investigate if our code can be used to run bigger models on multiple xPUs in the same amount of time as smaller models on a single xPU. We only measure GPUs on multiple Piz Daint nodes, since the availability of a fast network is essential to get good scaling across multiple nodes.
 
 We use as baseline time the best one that was measured for a single node computation.
 
@@ -271,7 +282,9 @@ For these measurements we use a different approach: we run some timesteps, start
 
 ![Weak scaling 3D and 2D](./scripts/benchmarks/results/weak_scaling_eff_2D3D.png)
 
-We can see that we obtain a very high and stable weak scaling efficiency at around 95.8% for 2D and around 99.5% for 3D, at least for the amount of nodes that we could measure. 
+We can see that we obtain a very high and stable weak scaling efficiency at around 95.8% for 2D and around 99.5% for 3D, at least for the amount of nodes that we could measure.
+
+**CAVEATS**: benchmarks were performed using the `@hide_communication` macro of ImplicitGlobalGrid with factors `(2,2)` and `(2,2,2)` for 2D and 3D multixPUs versions, which is not currently supported because module precompilation breaks if used in combination with ParallelStencil. You can use this feature by importing and initializing ParallelStencil and ImplicitGlobalGrid before including the source file containing the solver you want to use. Then you can uncomment the lines with `@hide_communication` and also specify with the parameter `b_width` its argument.
 
 ## Conclusions
 
@@ -279,9 +292,9 @@ We have shown that it is possible to solve acoustic equation with finite differe
 
 We can scale the model size arbitrarily by distributing computation onto multiple GPUs (we need to have them available though! also costly to use a big number of GPUs on Piz Daint)
 
-CPML boundary conditions seem to work well, more quantitative analysis is needed (recording "seismograms" at specific locations to assess that "spurious" CPML reflections are significantly smaller than the ones from the velocity model itself). Also we should compare our solver with other ones that are known to be correct.
+CPML boundary conditions seem to work pretty well, at least for ricker wavelet sources with a specific frequency. Comparing our solver with other ones that are known to be correct is one of the next steps.
 
-Still need to handle checkpointing and gradient computations (this will probably come out with the v1.1.0 version).
+_WIP: functionalities to compute gradients with respect to velocities using the adjoint method and residuals from available data and checkpointing features._
 
 ## References
 
@@ -295,6 +308,8 @@ GEOPHYSICS (2007),72(5): SM155](https://library.seg.org/doi/10.1190/1.2757586)
 
 [4] [Piz Daint](https://www.cscs.ch/computers/piz-daint/)
 
+[5] [Computational Seismology: A Practical Introduction, Heiner Igel, Oxford University Press 2016](https://academic.oup.com/book/26503)
+
 # Appendix
 
 Here is written some information on documentation and how to use the scripts to reproduce results.
@@ -306,9 +321,9 @@ Here is written some information on documentation and how to use the scripts to 
 
 ## How to reproduce results
 
-We provide ready-to-use scripts to run simulations shown in this README. The scripts are inside the `script` folder and are called `run_<solver_version_here>.jl`. They run the same setups (and more) that we described. You can take inspiration from those scripts to run your own models and simulations configurations.
+We provide ready-to-use scripts to run simulations shown in this README. The scripts are inside the `script` folder and are called `run_<solver_version_here>.jl`. They run the same setups that we described (and some more). You can take inspiration from those scripts to run your own models and simulations configurations.
 
-We also provide scripts for running benchmarks. You can find these in the `scripts/benchmarks` folder. We also have scripts for plotting benchmarks in this folder. There is also most of the data to plot benchmarks here.
+We also provide some scripts for running benchmarks. You can find these in the `scripts/benchmarks` folder. We also have scripts for plotting benchmarks in this folder. Data collected from performed benchmarks is here too.
 
 We also provide submissions script for Piz Daint in the `submit_daint` folder. Here you can find various scripts for submitting jobs on the Slurm queue and some results from our runs. There is data to use for weak scaling efficiency plots here.
 

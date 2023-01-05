@@ -57,16 +57,6 @@ function calc_Kab_CPML(halo::Integer,
 end
 
 @doc raw"""
-gaussource1D(t::Real, t0::Real, f0::Real)    
-
-First derivative of gaussian source function for current time `t``, activation time `t0` and dominating frequency `f0`.
-"""
-function gaussource1D(t::Real, t0::Real, f0::Real)
-    return (t-t0) * exp(-((pi * f0 * (t - t0))^2))
-end
-
-
-@doc raw"""
     rickersource1D(t::Real, t0::Real, f0::Real)    
 
 Ricker source time function for current time `t``, activation time `t0` and dominating frequency `f0`.
