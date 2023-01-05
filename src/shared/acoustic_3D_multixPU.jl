@@ -458,7 +458,7 @@ end
             velview = (((copy(vel_slice) .- minimum(vel_slice)) ./ (maximum(vel_slice) - minimum(vel_slice)))) .* (plims[2] - plims[1]) .+ plims[1]
             p1 = heatmap(0:dx:lx, 0:dy:ly, velview'; c=:grayC, aspect_ratio=:equal, colorbar=false)
             # pressure heatmap
-            pview = copy(p_slice)
+            pview = Array(p_slice)
             # print iteration values
             maxabsp = @sprintf "%e" maximum(abs.(pview))
             @show it*dt, it, maxabsp
@@ -496,7 +496,7 @@ end
             # traces plot
             tracesview = Array(traces)
             p2 = plot(times[1:it], tracesview[1:it, :];
-                ylims=plims,
+                ylims=(plims[1], plims[2]),
                 xlims=(times[1], times[end]),
                 xlabel="time [sec]",
                 ylabel="pressure [Pas]",

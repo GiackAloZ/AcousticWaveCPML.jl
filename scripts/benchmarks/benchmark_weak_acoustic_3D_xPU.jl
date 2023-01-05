@@ -19,4 +19,4 @@ posrecs[1,:] .= [lx/2,  2ly/3, lz/2]
 recs = Receivers(posrecs)
 
 solve3D(lx, ly, lz, lt, vel, srcs, recs;
-              halo=20, rcoef=0.0001 freetop=false)
+              halo=20, rcoef=0.0001, freetop=false)

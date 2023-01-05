@@ -27,6 +27,6 @@ posrecs[1,:] .= [lx/2,  2ly/3, lz/2]
 recs = Receivers(posrecs)
 
 solve3D_multi(lx, ly, lz, lt, nx, ny, nz, vel_func, srcs, recs;
-              halo=20, rcoef=0.0001 freetop=false, init_MPI=false)
+              halo=20, rcoef=0.0001, freetop=false, init_MPI=false)
 
 MPI.Finalize()
