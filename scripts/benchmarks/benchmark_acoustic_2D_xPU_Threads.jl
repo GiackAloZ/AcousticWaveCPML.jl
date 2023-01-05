@@ -1,5 +1,5 @@
 using AcousticWaveCPML
-using AcousticWaveCPML.Acoustic2D
+using AcousticWaveCPML.Acoustic2D_Threads
 
 using Printf
 

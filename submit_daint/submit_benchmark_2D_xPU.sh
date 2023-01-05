@@ -12,4 +12,4 @@
 module load daint-gpu
 module load Julia/1.7.2-CrayGNU-21.09-cuda
 
-srun julia -O3 --check-bounds=no --project=.. -- ../scripts/benchmarks/benchmark_acoustic_2D_xPU.jl
+srun julia -O3 --check-bounds=no --project=.. --math-mode=fast -- ../scripts/benchmarks/benchmark_acoustic_2D_xPU_CUDA.jl

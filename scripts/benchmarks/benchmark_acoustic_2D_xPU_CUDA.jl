@@ -1,10 +1,10 @@
 using AcousticWaveCPML
-using AcousticWaveCPML.Acoustic2D
+using AcousticWaveCPML.Acoustic2D_CUDA
 
 using Printf
 
 # benchmark single runs
-nx = ny = 2 .^ (6:12) .+ 1
+nx = ny = 2 .^ (6:14) .+ 1
 lx = ly = (nx .- 1) .* 10.0
 for i = eachindex(nx)
     vel = 2000.0 .* ones(Float64, nx[i], ny[i])   # velocity model [m/s]
@@ -25,7 +25,7 @@ end
 
 # benchmark full run
 t_tic = Base.time()
-nx = ny = 2^12 + 1
+nx = ny = 2^14 + 1
 lx = ly = (nx - 1) * 10.0
 vel = 2000.0 .* ones(Float64, nx, ny)         # velocity model [m/s]
 lt = 2.0                                      # final time [s]
