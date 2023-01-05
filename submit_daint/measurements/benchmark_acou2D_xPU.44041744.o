@@ -1,0 +1,34 @@
+size = 65x65, time = 5.491e-05 sec, Teff = 6.439 GB/s, memory = 0.000 GB
+size = 129x129, time = 5.490e-05 sec, Teff = 17.596 GB/s, memory = 0.001 GB
+size = 257x257, time = 5.973e-05 sec, Teff = 49.839 GB/s, memory = 0.002 GB
+size = 513x513, time = 7.536e-05 sec, Teff = 134.613 GB/s, memory = 0.007 GB
+size = 1025x1025, time = 1.285e-04 sec, Teff = 288.371 GB/s, memory = 0.027 GB
+size = 2049x2049, time = 3.444e-04 sec, Teff = 410.097 GB/s, memory = 0.103 GB
+size = 4097x4097, time = 1.267e-03 sec, Teff = 434.794 GB/s, memory = 0.408 GB
+size = 8193x8193, time = 4.547e-03 sec, Teff = 478.412 GB/s, memory = 1.622 GB
+size = 16385x16385, time = 1.773e-02 sec, Teff = 487.607 GB/s, memory = 6.465 GB
+size = 16385x16385, total time = 1.67770472e+01 sec, time per it = 1.80011236e-02 sec, Teff = 480.305 GB/s, memory = 6.465 GB
+fullrun: size = 16385x16385, nt = 1132, time = 2.570e+01 sec
+
+
+Batch Job Summary Report (version 21.01.1) for Job "benchmark_acou2D_xPU" (44041744) on daint
+
+Job information (1/3)
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed Time limit
+------------------- ------------------- ------------------- ------------------- ---------- ----------
+2023-01-05T11:00:35 2023-01-05T11:00:35 2023-01-05T11:01:10 2023-01-05T11:04:52   00:03:42   00:30:00
+-----------------------------------------------------------------------------------------------------
+
+Job information (2/3)
+-------------------------------------------------------------
+    Username      Account    Partition   NNodes        Energy
+------------ ------------ ------------ -------- -------------
+    class205      class04       normal        1     26.865 kJ
+
+Job information (3/3) - GPU utilization data
+----------------------------------------------------
+   Node name       Usage      Max mem Execution time
+------------ ----------- ------------ --------------
+    nid02014        45 %    14695 MiB       00:02:31
+
