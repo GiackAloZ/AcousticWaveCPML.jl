@@ -73,5 +73,5 @@ function run_gradient()
             halo=20, rcoef=0.0001, do_vis=true, do_save=true, nvis=50, nsave=50, gif_name="acoustic3D_gradient_freetop_slice_halo20", save_name="acoustic3D_gradient_freetop_halo20", freetop=true, threshold=0.01, plims=[-1e-10,1e-10])
 end
 
-# run_center()
+run_center()
 run_gradient()
