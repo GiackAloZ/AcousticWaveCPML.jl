@@ -101,6 +101,12 @@ struct Sources
         )
 
     Create a single shot wave propagation source configuration from source positions, time-functions and a frequency domain.
+
+    The `positions` matrix must have a row for each source and as many columns as problem dimensions. Each source coordinate is specified in meters.
+    The `t0s` vector must have one value for each source representing the activation time of that source in seconds.
+    The `srctfs` vector must have one function for each source. Each function accepts three parameters (the current time, the activation time and the dominating frequency)
+    and returns the value of the sources at that current time.
+    The `freqdomain` parameter specifies the dominating frequency for all sources (which must be the same for all of them).
     """
     function Sources(
         positions::Matrix{<:Real},
@@ -126,6 +132,11 @@ mutable struct Receivers
         Receivers(positions::Matrix{<:Real})
 
     Create a single shot wave propagation receivers configuration from receivers positions.
+
+    The `positions` matrix must have a row for each receiver and as many columns as problem dimensions. Each receiver coordinate is specified in meters.
+    
+    # Fields
+    - `seismograms::Matrix{<:Real}`: container for recorded seismogram traces (one column per receiver in the order specified by `positions` and one row per simulation time step).
     """
     function Receivers(positions::Matrix{<:Real})
         @assert size(positions, 1) > 0 "There must be at least one receiver!"
