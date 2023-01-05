@@ -1,28 +1,31 @@
+@doc raw"""
+Module with acoustic 3D solver.
+"""
 module Acoustic3D
 
     @doc raw"""
-    solve3D(
-        lx::Real,
-        ly::Real,
-        lz::Real,
-        lt::Real,
-        vel::Array{<:Real, 3},
-        srcs::Sources,
-        recs::Receivers;
-        halo::Integer = 20,
-        rcoef::Real = 0.0001,
-        ppw::Real = 10.0,
-        freetop::Bool = true,
-        do_bench::Bool = false,
-        do_vis::Bool = false,
-        do_save::Bool = false,
-        nvis::Integer = 5,
-        nsave::Integer = 5,
-        gif_name::String = "acoustic3D_slice",
-        save_name::String = "acoustic3D",
-        plims::Vector{<:Real} = [-1.0, 1.0],
-        threshold::Real = 0.01
-    )
+        solve3D(
+            lx::Real,
+            ly::Real,
+            lz::Real,
+            lt::Real,
+            vel::Array{<:Real, 3},
+            srcs::Sources,
+            recs::Receivers;
+            halo::Integer = 20,
+            rcoef::Real = 0.0001,
+            ppw::Real = 10.0,
+            freetop::Bool = true,
+            do_bench::Bool = false,
+            do_vis::Bool = false,
+            do_save::Bool = false,
+            nvis::Integer = 5,
+            nsave::Integer = 5,
+            gif_name::String = "acoustic3D_slice",
+            save_name::String = "acoustic3D",
+            plims::Vector{<:Real} = [-1.0, 1.0],
+            threshold::Real = 0.01
+        )
 
     Solve 3D acoustic wave equation on a model with size `lx`x`ly`x`lz` [m], for final time `lt` [sec] with the velocity model `vel` [m/s].
     The size of `vel` implicitly specifies the number of grid points to use for the simulation. 
@@ -32,6 +35,7 @@ module Acoustic3D
     Return the final time pressure field as a vector and populate the receivers seismograms with the recorded traces.
 
     If `do_vis`, create and save visualization in `simulations` folder.
+    If `do_save`, create and save intermediate pressure fields in `simulations/tmp` folder.
     
     # Arguments
     - `halo::Integer = 20`: the number of CPML layers.

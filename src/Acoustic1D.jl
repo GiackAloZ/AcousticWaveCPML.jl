@@ -1,3 +1,6 @@
+@doc raw"""
+Module with acoustic 1D solver.
+"""
 module Acoustic1D
 
     @doc raw"""

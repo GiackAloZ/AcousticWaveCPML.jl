@@ -1,26 +1,29 @@
+@doc raw"""
+Module with acoustic 2D multi-xPU solver using `CUDA`.
+"""
 module Acoustic2Dmulti_CUDA
 
     @doc raw"""
-    solve2D_multi(
-        lx::Real,
-        ly::Real,
-        lt::Real,
-        nx::Integer,
-        ny::Integer,
-        vel_func::Function,
-        srcs::Sources,
-        recs::Receivers;
-        halo::Integer = 20,
-        rcoef::Real = 0.0001,
-        ppw::Real = 10.0,
-        freetop::Bool = true,
-        do_vis::Bool = false,
-        nvis::Integer = 5,
-        gif_name::String = "acoustic2D_multixPU",
-        plims::Vector{<:Real} = [-1, 1],
-        threshold::Real = 0.01,
-        init_MPI::Bool = true
-    )
+        solve2D_multi(
+            lx::Real,
+            ly::Real,
+            lt::Real,
+            nx::Integer,
+            ny::Integer,
+            vel_func::Function,
+            srcs::Sources,
+            recs::Receivers;
+            halo::Integer = 20,
+            rcoef::Real = 0.0001,
+            ppw::Real = 10.0,
+            freetop::Bool = true,
+            do_vis::Bool = false,
+            nvis::Integer = 5,
+            gif_name::String = "acoustic2D_multixPU",
+            plims::Vector{<:Real} = [-1, 1],
+            threshold::Real = 0.01,
+            init_MPI::Bool = true
+        )
 
     Solve 2D acoustic wave equation on multiple MPI processes on a model with size `lx`x`ly` [m], for final time `lt` [sec] with the velocity model `vel_func` [m/s].
     The LOCAL number of grid points to use for the simulation (for each MPI processes) is specified by `nx` and `ny`.

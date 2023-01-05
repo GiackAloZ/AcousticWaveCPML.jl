@@ -244,7 +244,6 @@ end
     rcoef::Real = 0.0001,
     ppw::Real = 10.0,
     freetop::Bool = true,
-    do_bench::Bool = false,
     do_vis::Bool = false,
     do_save::Bool = false,
     nvis::Integer = 5,

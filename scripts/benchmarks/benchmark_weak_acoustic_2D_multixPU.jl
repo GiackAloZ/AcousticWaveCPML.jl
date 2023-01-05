@@ -23,7 +23,7 @@ possrcs = zeros(1,2)
 possrcs[1,:] .= [lx/2, ly/2]
 srcs = Sources(possrcs, [t0], [stf], f0)
 # receivers
-posrecs = zeros(2,2)
+posrecs = zeros(1,2)
 posrecs[1,:] .= [lx/2,  2ly/3]
 recs = Receivers(posrecs)
 
