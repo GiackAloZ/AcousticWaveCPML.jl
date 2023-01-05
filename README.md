@@ -2,6 +2,8 @@
 
 [![Build Status](https://github.com/GiackAloZ/AcousticWaveCPML.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/GiackAloZ/AcousticWaveCPML.jl/actions/workflows/CI.yml)
 
+[![Develop documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://giackaloz.github.io/AcousticWaveCPML.jl/)
+
 A Julia package for solving acoustic wave propagation in 2D and 3D on multi-xPUs using CPML boundary conditions.
 
 _WIP: this package will also provide functionalities to compute gradients with respect to velocities using the adjoint method and residuals from available data. Checkpointing features will also allow computing gradients without running out of memory._
@@ -299,15 +301,12 @@ Here is written some information on documentation and how to use the scripts to 
 
 ## Documentation
 
-The scripts are documented using Julia doc strings. Simply load the script with the solver function you want to use (e.g. for single xPU 2D acoustic load `scripts/solvers/acoustic2D_xPU.jl`) and then us the Julia help `?` for retrieving the docs for that function.
-
-_DISCLAIMER: It is planned to release a fully fledged documentation of the package for v1.1.0_
+- [STABLE]() **no stable documentation as of now**.
+- [DEVEL](https://giackaloz.github.io/AcousticWaveCPML.jl/) _documentation of in-developement version_.
 
 ## How to reproduce results
 
 We provide ready-to-use scripts to run simulations shown in this README. The scripts are inside the `script` folder and are called `run_<solver_version_here>.jl`. They run the same setups (and more) that we described. You can take inspiration from those scripts to run your own models and simulations configurations.
-
-To turn on GPU computation instead of CPU, you need to change a constant inside the solver that you want to use called `USE_GPU`. This is one of the many rooms for improvements that will be accounted for in the v1.1.0 version.
 
 We also provide scripts for running benchmarks. You can find these in the `scripts/benchmarks` folder. We also have scripts for plotting benchmarks in this folder. There is also most of the data to plot benchmarks here.
 
