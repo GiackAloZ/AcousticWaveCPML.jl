@@ -272,7 +272,7 @@ end
     vel  = zeros(nx, ny, nz)
     vel .= [ vel_func(x_g(ix, dx, vel), y_g(iy, dy, vel), z_g(iz, dz, vel)) for ix=1:nx,iy=1:ny,iz=1:nz ]
     # Derived physics
-    vel_max = maximum(vel)                          # maximum velocity [m/s]
+    vel_max = max_g(vel)                            # maximum velocity [m/s]
     # Other numerics
     dt = sqrt(3)/ (vel_max * (1/dx + 1/dy + 1/dz))/2# maximum possible timestep size (CFL stability condition) [s]
     nt = ceil(Int, lt / dt)                         # number of timesteps
