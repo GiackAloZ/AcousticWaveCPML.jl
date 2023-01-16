@@ -245,9 +245,6 @@ end
 
         # visualization
         if do_vis && (it % nvis == 0)
-            # update plims
-            plims[1] = min(plims[1], minimum(pcur))
-            plims[2] = max(plims[2], maximum(pcur))
             # print iteration values
             maxabsp = @sprintf "%e" maximum(abs.(pcur))
             @show it*dt, it, maxabsp, plims
